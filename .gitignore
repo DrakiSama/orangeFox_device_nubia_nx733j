@@ -3,5 +3,6 @@
 *.swo
 *~
 /.tmp/
-/prebuilt/kernel
-/prebuilt/dtbo.img
+
+# Actions-generated display version.
+/build-version.mk
