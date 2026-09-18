@@ -1,43 +1,32 @@
-# TWRP Partition Flags - Nubia Z70 Ultra (NX733J)
-# Controla qué particiones se muestran en Install/Wipe/Backup
-# NO agregar /super — flashearla destruye TODAS las particiones lógicas
-# Formato SIN fstype: TWRP lo obtiene de recovery.fstab
-
-# Particiones lógicas (dentro de super) — visibles para instalar ROMs
-/system      backup=1;flash=1;wipe=0;mount=1;
-/system_ext  backup=1;flash=1;wipe=0;mount=1;
-/product     backup=1;flash=1;wipe=0;mount=1;
-/vendor      backup=1;flash=1;wipe=0;mount=1;
-/odm         backup=0;flash=1;wipe=0;mount=1;
-/vendor_dlkm backup=0;flash=0;wipe=0;mount=1;
-/system_dlkm backup=0;flash=0;wipe=0;mount=1;
-
-# Boot partitions (per-slot + slotselect)
-/boot_a      backup=0;flash=1;wipe=0;mount=0;
-/boot_b      backup=0;flash=1;wipe=0;mount=0;
-/boot        backup=1;flash=1;wipe=0;mount=0;
-/vendor_boot_a backup=0;flash=1;wipe=0;mount=0;
-/vendor_boot_b backup=0;flash=1;wipe=0;mount=0;
-/vendor_boot backup=1;flash=1;wipe=0;mount=0;
-/init_boot_a backup=0;flash=1;wipe=0;mount=0;
-/init_boot_b backup=0;flash=1;wipe=0;mount=0;
-/init_boot   backup=1;flash=1;wipe=0;mount=0;
-/recovery_a  backup=0;flash=1;wipe=0;mount=0;
-/recovery_b  backup=0;flash=1;wipe=0;mount=0;
-/recovery    backup=1;flash=0;wipe=0;mount=0;
-/dtbo_a      backup=0;flash=1;wipe=0;mount=0;
-/dtbo_b      backup=0;flash=1;wipe=0;mount=0;
-/dtbo        backup=1;flash=1;wipe=0;mount=0;
-
-# Data
-/data        backup=1;flash=0;wipe=1;mount=1;storage=1;
-/metadata    backup=0;flash=0;wipe=1;mount=1;
-
-# Firmware (no tocar)
-/persist     backup=1;flash=0;wipe=0;mount=1;
-/firmware    backup=0;flash=0;wipe=0;mount=0;
-/misc        backup=0;flash=0;wipe=0;mount=0;
-/persistent  backup=0;flash=0;wipe=0;mount=0;
-
-# Super partition — OCULTA para evitar soft brick
-/super       backup=0;flash=0;wipe=0;mount=0;
+# TWRP v1 syntax: mount_point filesystem block_device flags=...
+# EROFS partitions are image-flash targets, not file-based backup/restore targets.
+/system_root erofs system flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/system_ext erofs system_ext flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/product erofs product flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/vendor erofs vendor flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/odm erofs odm flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/vendor_dlkm erofs vendor_dlkm flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/system_dlkm erofs system_dlkm flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0
+/boot emmc /dev/block/by-name/boot flags=slotselect;backup=1;flashimg=1;canbewiped=0;wipeingui=0
+/boot_a emmc /dev/block/by-name/boot_a flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Boot-A
+/boot_b emmc /dev/block/by-name/boot_b flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Boot-B
+/vendor_boot emmc /dev/block/by-name/vendor_boot flags=slotselect;backup=1;flashimg=1;canbewiped=0;wipeingui=0
+/vendor_boot_a emmc /dev/block/by-name/vendor_boot_a flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Vendor-Boot-A
+/vendor_boot_b emmc /dev/block/by-name/vendor_boot_b flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Vendor-Boot-B
+/init_boot emmc /dev/block/by-name/init_boot flags=slotselect;backup=1;flashimg=1;canbewiped=0;wipeingui=0
+/init_boot_a emmc /dev/block/by-name/init_boot_a flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Init-Boot-A
+/init_boot_b emmc /dev/block/by-name/init_boot_b flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Init-Boot-B
+/recovery emmc /dev/block/by-name/recovery flags=slotselect;backup=1;flashimg=1;canbewiped=0;wipeingui=0
+/recovery_a emmc /dev/block/by-name/recovery_a flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Recovery-A
+/recovery_b emmc /dev/block/by-name/recovery_b flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=Recovery-B
+/dtbo emmc /dev/block/by-name/dtbo flags=slotselect;backup=1;flashimg=1;canbewiped=0;wipeingui=0
+/dtbo_a emmc /dev/block/by-name/dtbo_a flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=DTBO-A
+/dtbo_b emmc /dev/block/by-name/dtbo_b flags=backup=0;flashimg=1;canbewiped=0;wipeingui=0;display=DTBO-B
+/data f2fs /dev/block/by-name/userdata flags=backup=1;flashimg=0;storage;wipeingui
+/metadata f2fs /dev/block/by-name/metadata flags=backup=0;flashimg=0;wipeingui=0
+/persist ext4 /dev/block/by-name/persist flags=backup=1;flashimg=0;canbewiped=0;wipeingui=0
+/firmware vfat /dev/block/by-name/modem flags=slotselect;backup=0;flashimg=0;canbewiped=0;wipeingui=0
+/misc emmc /dev/block/by-name/misc flags=backup=0;flashimg=0;canbewiped=0;wipeingui=0
+/persistent emmc /dev/block/by-name/frp flags=backup=0;flashimg=0;canbewiped=0;wipeingui=0
+/vbmeta emmc /dev/block/by-name/vbmeta flags=slotselect;backup=1;flashimg=0;canbewiped=0;wipeingui=0
+/vbmeta_system emmc /dev/block/by-name/vbmeta_system flags=slotselect;backup=1;flashimg=0;canbewiped=0;wipeingui=0

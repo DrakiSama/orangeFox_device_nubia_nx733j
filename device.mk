@@ -31,9 +31,10 @@ PRODUCT_EXTRA_RECOVERY_KEYS += \
 PRODUCT_SOONG_NAMESPACES += \
     $(DEVICE_PATH)
 
+# Recovery fstab is separate from the stock Android first-stage fstab.
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery.fstab:$(TARGET_COPY_OUT_RECOVERY)/root/system/etc/recovery.fstab \
-    $(DEVICE_PATH)/recovery.fstab:$(TARGET_VENDOR_RAMDISK_OUT)/first_stage_ramdisk/fstab.sun \
+    $(DEVICE_PATH)/fstab.qcom:$(TARGET_VENDOR_RAMDISK_OUT)/first_stage_ramdisk/fstab.qcom \
     $(DEVICE_PATH)/recovery/root/vendor/etc/vintf/manifest.xml:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/etc/vintf/manifest.xml
 
 PRODUCT_PACKAGES += fastbootd

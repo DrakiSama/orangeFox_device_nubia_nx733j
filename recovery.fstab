@@ -1,37 +1,42 @@
-# Android fstab — Nubia Z70 Ultra (NX733J / PQ84A01)
-# Snapdragon 8 Elite (sun) — GKI 2.0 — dynamic partitions via super
+# NX733J / PQ84A01: verified against stock fstab.qcom and lpdump, 2026-09-12.
+# Android v2 syntax. Recovery UI flags live in recovery/root/system/etc/twrp.flags.
+# Logical names are resolved from super metadata; never hardcode dm-N or a slot.
+# src mount_point type mount_options fs_mgr_flags
+system /system_root erofs ro wait,slotselect,logical
+system_ext /system_ext erofs ro wait,slotselect,logical
+product /product erofs ro wait,slotselect,logical
+vendor /vendor erofs ro wait,slotselect,logical
+odm /odm erofs ro wait,slotselect,logical
+vendor_dlkm /vendor_dlkm erofs ro wait,slotselect,logical
+system_dlkm /system_dlkm erofs ro wait,slotselect,logical
 
-# Logical partitions (inside super)
-/system           ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
-/system_ext       ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
-/product          ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
-/vendor           ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta,logical,first_stage_mount
-/odm              ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta,logical,first_stage_mount
-/vendor_dlkm      ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta,logical,first_stage_mount
-/odm_dlkm         ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta,logical,first_stage_mount
-/system_dlkm      ext4    ro,barrier=1                                        wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
+# Physical images: active-slot aliases and explicit slots.
+/dev/block/by-name/boot /boot emmc defaults slotselect
+/dev/block/by-name/boot_a /boot_a emmc defaults defaults
+/dev/block/by-name/boot_b /boot_b emmc defaults defaults
+/dev/block/by-name/vendor_boot /vendor_boot emmc defaults slotselect
+/dev/block/by-name/vendor_boot_a /vendor_boot_a emmc defaults defaults
+/dev/block/by-name/vendor_boot_b /vendor_boot_b emmc defaults defaults
+/dev/block/by-name/init_boot /init_boot emmc defaults slotselect
+/dev/block/by-name/init_boot_a /init_boot_a emmc defaults defaults
+/dev/block/by-name/init_boot_b /init_boot_b emmc defaults defaults
+/dev/block/by-name/recovery /recovery emmc defaults slotselect
+/dev/block/by-name/recovery_a /recovery_a emmc defaults defaults
+/dev/block/by-name/recovery_b /recovery_b emmc defaults defaults
+/dev/block/by-name/dtbo /dtbo emmc defaults slotselect
+/dev/block/by-name/dtbo_a /dtbo_a emmc defaults defaults
+/dev/block/by-name/dtbo_b /dtbo_b emmc defaults defaults
+/dev/block/by-name/vbmeta /vbmeta emmc defaults slotselect
+/dev/block/by-name/vbmeta_system /vbmeta_system emmc defaults slotselect
+/dev/block/by-name/misc /misc emmc defaults defaults
+/dev/block/by-name/frp /persistent emmc defaults defaults
 
-# Physical partitions
-/boot             emmc    defaults                                            slotselect,first_stage_mount
-/vendor_boot      emmc    defaults                                            slotselect,first_stage_mount
-/init_boot        emmc    defaults                                            slotselect,first_stage_mount
-/recovery         emmc    defaults                                            slotselect
-/dtbo             emmc    defaults                                            slotselect
+# Metadata and userdata encryption options match the installed stock firmware.
+/dev/block/by-name/metadata /metadata f2fs noatime,nosuid,nodev,discard wait,check,formattable
+/dev/block/by-name/userdata /data f2fs noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,inlinecrypt latemount,wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,metadata_encryption=aes-256-xts:wrappedkey_v0,quota,reservedsize=128M,sysfs_path=/sys/devices/platform/soc/1d84000.ufshc,checkpoint=fs
 
-# Metadata — FBE
-/metadata         f2fs    noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,wrappedkey       wait,check,formattable,first_stage_mount
+/dev/block/by-name/persist /persist ext4 noatime,nosuid,nodev,barrier=1 wait
+/dev/block/by-name/modem /firmware vfat ro,shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0 wait,slotselect
+# OTG pending device verification: this recovery misidentifies internal UFS as USB.
 
-# Userdata — FBE con ICE hardware encryption
-/userdata         f2fs    noatime,nosuid,nodev,discard,reserve_root=131072,resgid=1065,fsync_mode=nobarrier,wrappedkey,fileencryption=ice:v2      wait,check,formattable,quota,reservedsize=512M,keydirectory=/metadata/vold/metadata_encryption,encryptable=ice
-
-# Modem firmware (needs slotselect para mantener slot actual)
-/modem            emmc    defaults                                            slotselect,first_stage_mount
-
-# Firmware partitions
-/firmware         vfat    ro,shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0    wait,slotselect
-
-# Persist
-/persist          ext4    noatime,nosuid,nodev,barrier=1,user_xattr          wait
-
-# USB OTG
-/usb-otg          auto    defaults                                            defaults
+# TWRP discovers super itself; no duplicate raw /super entry here.
