@@ -1,2 +1,16 @@
+# Auto detect text files and perform LF normalization
 * text=auto
-* text eol=lf
+
+# Binary payloads must be committed byte-exact: never normalize these.
+prebuilt/** -text
+recovery/root/** -text
+security/** -text
+*.img -text
+*.so -text
+*.bin -text
+*.elf -text
+*.png -text
+*.msc -text
+
+# Unified diffs prefix context lines with a space, including blank/tabbed lines.
+.github/patches/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab
