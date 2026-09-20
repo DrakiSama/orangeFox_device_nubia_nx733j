@@ -1,0 +1,23 @@
+diff --git a/data.cpp b/data.cpp
+index 25b883e..5b89825 100755
+--- a/data.cpp
++++ b/data.cpp
+@@ -1014,13 +1014,12 @@ void DataManager::SetDefaultValues()
+ #ifdef TW_NO_CPU_TEMP
+   printf("TW_NO_CPU_TEMP := true\n");
+   mConst.SetValue("tw_no_cpu_temp", "1");
++#elif defined(TW_CUSTOM_CPU_TEMP_PATH)
++  // Device init may create a custom sensor link after defaults are loaded.
++  // Keep polling enabled; GetMagicValue returns unavailable until it is readable.
++  mConst.SetValue("tw_no_cpu_temp", "0");
+ #else
+-  string cpu_temp_file;
+-#ifdef TW_CUSTOM_CPU_TEMP_PATH
+-  cpu_temp_file = EXPAND(TW_CUSTOM_CPU_TEMP_PATH);
+-#else
+-  cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
+-#endif
++  string cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
+   if (TWFunc::Path_Exists(cpu_temp_file))
+     {
+       mConst.SetValue("tw_no_cpu_temp", "0");
