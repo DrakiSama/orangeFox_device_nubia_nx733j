@@ -1,0 +1,8 @@
+twrp-flags-columns.patch
+image-size-preflight.patch
+logical-image-flash.patch
+nx733j-haptics.patch
+image-target-message.patch
+late-cpu-sensor.patch
+cli-result.patch
+nx733j-super-protection.patch
