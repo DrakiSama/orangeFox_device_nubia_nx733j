@@ -92,7 +92,8 @@ El resultado ejecutado se registra en `validation-results.txt`.
 
 ## Build y artefactos
 
-El workflow manual admite self-hosted Linux o ubuntu-22.04. Usa el sincronizador oficial,
+El workflow manual usa exclusivamente una VM GitHub-hosted ubuntu-22.04, como TWRP,
+con 16 GiB de swap y cuatro trabajos. No usa WSL ni runner local. Usa el sincronizador oficial,
 revisiones recovery/vendor fijadas, device tree del commit exacto, ccache, tests previos,
 registro del manifiesto resuelto y diffs de los proyectos parcheados.
 Publica artifacts y logs, nunca releases automáticas. No limpia SDKs ni swap de un self-hosted.

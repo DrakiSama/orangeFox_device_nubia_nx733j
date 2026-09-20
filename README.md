@@ -1,7 +1,7 @@
 # OrangeFox para Nubia Z70 Ultra — NX733J / PQ84A01
 
 Port de los fixes del device tree TWRP `twrp-16.0` sobre **OrangeFox fox_12.1**.
-Producto: `ofrp_NX733J`. Rama de desarrollo: `port/twrp-16-sync`.
+Producto: `ofrp_NX733J`. Rama publicada: `main`.
 
 ## Estado real
 
@@ -18,19 +18,26 @@ TWRP tampoco se convierten automáticamente en resultados OrangeFox.
 
 [Informe completo, revisiones, inventario y checklist de prueba física](docs/PORT_STATUS.md).
 
+## Generar con GitHub Actions
+
+Abrir **Actions → OrangeFox NX733J - GitHub hosted → Run workflow → main**.
+La compilación se ejecuta en una VM `ubuntu-22.04` de GitHub, con swap, ccache y
+cuatro trabajos en paralelo, como el flujo hosted de TWRP. No requiere WSL ni runner local.
+Los logs y, cuando el build pasa, la imagen y SHA256SUMS se descargan desde **Artifacts**.
+El cambio de runner no corrige por sí solo el bloqueo SDK 32/API 35 descrito arriba.
+
 ## Pruebas sin teléfono
 
 En Linux con Python 3, Git, Bash y g++:
 
 ```bash
-git clone --branch port/twrp-16-sync https://github.com/DrakiSama/orangeFox_device_nubia_nx733j device-tree
+git clone --branch main https://github.com/DrakiSama/orangeFox_device_nubia_nx733j device-tree
 git clone --branch fox_12.1 https://gitlab.com/OrangeFox/bootable/Recovery.git recovery-source
 git -C recovery-source checkout "$(cat device-tree/.github/recovery-revision)"
 python3 device-tree/tools/apply-recovery-patches.py recovery-source
 python3 device-tree/tools/validate-port.py recovery-source
 ```
 
-La rama debe estar publicada para clonar estos cambios; mientras sean locales, utilizar este checkout.
 El aplicador rechaza revisiones no revisadas o archivos modificados y comprueba la serie completa antes de aplicarla.
 
 ## Build OrangeFox
@@ -59,7 +66,7 @@ Exige un destino device vacío para no sobrescribir trabajo existente.
 El common.mk correcto de esta distribución es `vendor/twrp/config/common.mk`, acompañado por
 los hooks oficiales OrangeFox de build/make y vendor/recovery; el producto continúa siendo OrangeFox.
 
-CI incluye tests automáticos y un build manual self-hosted o GitHub-hosted. Produce artifacts/logs,
+CI incluye tests automáticos y un build manual exclusivamente GitHub-hosted. Produce artifacts/logs,
 con límite de recovery de **104857600 bytes**, revisión exacta, SHA-256 y verificación del ramdisk
 final. No crea releases ni flashea el teléfono.
 

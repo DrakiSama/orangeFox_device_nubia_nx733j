@@ -1,14 +1,6 @@
-name: OrangeFox NX733J validated build
+name: OrangeFox NX733J - GitHub hosted
 on:
   workflow_dispatch:
-    inputs:
-      runner:
-        description: Linux runner (self-hosted must have Android build dependencies)
-        type: choice
-        default: self-hosted
-        options:
-          - self-hosted
-          - ubuntu-22.04
 permissions:
   contents: read
 concurrency:
@@ -16,11 +8,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    runs-on: ${{ inputs.runner }}
+    runs-on: ubuntu-22.04
     timeout-minutes: 360
     defaults:
       run:
         shell: bash
+    env:
+      BUILD_JOBS: 4
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,13 +25,22 @@ jobs:
           echo "FOX_ROOT=$RUNNER_TEMP/fox-nx733j-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           mkdir -p "$GITHUB_WORKSPACE/build-artifacts"
       - name: Prepare disposable hosted runner
-        if: inputs.runner == 'ubuntu-22.04'
         run: |
           set -euo pipefail
           [[ "$RUNNER_ENVIRONMENT" == github-hosted ]]
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache \
+            /usr/local/.ghcup /usr/local/lib/powershell /usr/share/swift /usr/local/share/boost
           sudo apt-get update
           sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python3 python-is-python3 libssl-dev liblz4-tool lzop bc rsync ccache openjdk-11-jdk-headless
+          sudo apt-get clean
+          sudo fallocate -l 16G /mnt/orangefox.swap
+          sudo chmod 600 /mnt/orangefox.swap
+          sudo mkswap /mnt/orangefox.swap
+          sudo swapon /mnt/orangefox.swap
+          git config --global user.name "OrangeFox Builder"
+          git config --global user.email "orangefox-builder@users.noreply.github.com"
+          df -h
+          free -h
           mkdir -p "$HOME/bin"
           curl --fail --location https://storage.googleapis.com/git-repo-downloads/repo -o "$HOME/bin/repo"
           chmod +x "$HOME/bin/repo"
