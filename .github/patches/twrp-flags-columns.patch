@@ -1,0 +1,102 @@
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -20,6 +20,7 @@
+ */
+ 
+ #include <stdio.h>
++#include <sstream>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/stat.h>
+@@ -361,56 +362,41 @@
+ 	if (fstabFile != NULL) {
+ 		LOGINFO("Reading /etc/twrp.flags\n");
+ 		while (fgets(fstab_line, sizeof(fstab_line), fstabFile) != NULL) {
+-			size_t line_size = strlen(fstab_line);
+-			if (fstab_line[line_size - 1] != '\n')
+-				fstab_line[line_size] = '\n';
+-			Flags_Map line_flags;
+-			line_flags.Primary_Block_Device = "";
+-			line_flags.Alternate_Block_Device = "";
+-			line_flags.fstab_line = (char*)malloc(MAX_FSTAB_LINE_LENGTH);
+-			if (!line_flags.fstab_line) {
+-				LOGERR("malloc error on line_flags.fstab_line\n");
+-				return false;
+-			}
+-			memcpy(line_flags.fstab_line, fstab_line, MAX_FSTAB_LINE_LENGTH);
+-			bool found_separator = false;
+-			char *fs_loc = NULL;
+-			char *block_loc = NULL;
+-			char *flags_loc = NULL;
+-			size_t index, item_index = 0;
+-			for (index = 0; index < line_size; index++) {
+-				if (fstab_line[index] <= 32) {
+-					fstab_line[index] = '\0';
+-					found_separator = true;
+-				} else if (found_separator) {
+-					if (item_index == 0) {
+-						fs_loc = fstab_line + index;
+-					} else if (item_index == 1) {
+-						block_loc = fstab_line + index;
+-					} else if (item_index > 1) {
+-						char *ptr = fstab_line + index;
+-						if (*ptr == '/') {
+-							line_flags.Alternate_Block_Device = ptr;
+-						} else if (strlen(ptr) > strlen("flags=") && strncmp(ptr, "flags=", strlen("flags=")) == 0) {
+-							flags_loc = ptr;
+-							// Once we find the flags=, we're done scanning the line
+-							break;
+-						}
+-					}
+-					found_separator = false;
+-					item_index++;
+-				}
+-			}
+-			if (block_loc)
+-				line_flags.Primary_Block_Device = block_loc;
+-			if (fs_loc)
+-				line_flags.File_System = fs_loc;
+-			if (flags_loc)
+-				line_flags.Flags = flags_loc;
+-			string Mount_Point = fstab_line;
+-			twrp_flags[Mount_Point] = line_flags;
+-			memset(fstab_line, 0, sizeof(fstab_line));
+-		}
++            const size_t size = strlen(fstab_line);
++            if (size == sizeof(fstab_line) - 1 && fstab_line[size - 1] != '\n') {
++                int ch;
++                while ((ch = fgetc(fstabFile)) != '\n' && ch != EOF) {}
++                LOGERR("Overlong twrp.flags entry rejected\n");
++                continue;
++            }
++            std::istringstream input(fstab_line);
++            std::string mount, filesystem, block, token;
++            if (!(input >> mount) || mount[0] == '#') continue;
++            if (mount[0] != '/' || !(input >> filesystem >> block) ||
++                filesystem[0] == '#' || block[0] == '#') {
++                LOGERR("Malformed twrp.flags entry: %s\n", fstab_line);
++                continue;
++            }
++            Flags_Map line_flags;
++            line_flags.File_System = filesystem;
++            line_flags.Primary_Block_Device = block;
++            while (input >> token) {
++                if (token[0] == '#') break;
++                if (token[0] == '/') line_flags.Alternate_Block_Device = token;
++                else if (token.compare(0, 6, "flags=") == 0) {
++                    // Keep the remainder, including spaces in display labels.
++                    std::string tail;
++                    std::getline(input, tail);
++                    line_flags.Flags = token + tail;
++                    break;
++                }
++            }
++            line_flags.fstab_line = strdup(fstab_line);
++            if (!line_flags.fstab_line) { fclose(fstabFile); return false; }
++            auto previous = twrp_flags.find(mount);
++            if (previous != twrp_flags.end()) free(previous->second.fstab_line);
++            twrp_flags[mount] = line_flags;
++        }
+ 		fclose(fstabFile);
+ 	}
+ 	TWPartition *data = NULL;

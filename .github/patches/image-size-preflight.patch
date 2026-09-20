@@ -1,0 +1,83 @@
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -75,6 +75,7 @@
+ #include <linux/xattr.h>
+ #endif
+ #include <sparse_format.h>
++#include <sparse/sparse.h>
+ #include "progresstracking.hpp"
+ 
+ #define CRYPT_FOOTER_OFFSET 0x4000
+@@ -3485,6 +3486,7 @@
+ 	LOGINFO("Image filename is: %s\n", Backup_FileName.c_str());
+ 
+ 	if (Backup_Method == BM_FILES) {
++		gui_err("img_filesystem_unsupported=Direct IMG flashing is not supported for this filesystem partition");
+ 		LOGERR("Cannot flash images to file systems\n");
+ 		return false;
+ 	} else if (!Can_Flash_Img) {
+@@ -3496,6 +3498,10 @@
+ 			return false;
+ 		}
+ 		unsigned long long image_size = TWFunc::Get_File_Size(full_filename);
++		if (image_size == 0 || access(full_filename.c_str(), R_OK) != 0) {
++			gui_err("img_empty_err=Image is empty or could not be read");
++			return false;
++		}
+ 		if (image_size > Size) {
+ 			LOGINFO("Size (%llu bytes) of image '%s' is larger than target device '%s' (%llu bytes)\n",
+ 				image_size, Backup_FileName.c_str(), Actual_Block_Device.c_str(), Size);
+@@ -3537,19 +3543,30 @@
+ 	return false;
+ }
+ 
+-bool TWPartition::Flash_Sparse_Image(const string& Filename) {
+-	string Command;
+-
++bool TWPartition::Flash_Sparse_Image(const std::string& Filename) {
++    gui_msg(Msg("flashing=Flashing {1}...")(Display_Name));
++    int in = open(Filename.c_str(), O_RDONLY);
++    if (in < 0) return false;
++    struct sparse_file* s = sparse_file_import(in, true, false);
++    if (!s) { close(in); return false; }
++    int64_t expanded_size = sparse_file_len(s, false, false);
++    if (expanded_size <= 0 || static_cast<uint64_t>(expanded_size) > Size) {
++        gui_err("sparse_size_err=Expanded sparse image is invalid or larger than target partition");
++        close(in);
++        sparse_file_destroy(s);
++        return false;
++    }
++    int out = open(Actual_Block_Device.c_str(), O_WRONLY);
++    if (out < 0) { close(in); sparse_file_destroy(s); return false; }
+ #ifdef TW_ENABLE_BLKDISCARD
+-	BlkDiscard();
++    BlkDiscard();
+ #endif
+-
+-	gui_msg(Msg("flashing=Flashing {1}...")(Display_Name));
+-
+-	Command = "simg2img '" + Filename + "' '" + Actual_Block_Device + "'";
+-	LOGINFO("Flash command: '%s'\n", Command.c_str());
+-	TWFunc::Exec_Cmd(Command);
+-	return true;
++    int ret = sparse_file_write(s, out, false, false, false);
++    if (fsync(out) != 0) ret = -1;
++    if (close(out) != 0) ret = -1;
++    close(in);
++    sparse_file_destroy(s);
++    return ret == 0;
+ }
+ 
+ bool TWPartition::Flash_Image_FI(const string& Filename, ProgressTracking *progress) {
+--- a/Android.mk
++++ b/Android.mk
+@@ -141,9 +141,7 @@
+ LOCAL_SHARED_LIBRARIES += libbootloader_message libcrecovery libtwrpdigest libc++ libaosprecovery libcrypto libbase 
+ LOCAL_SHARED_LIBRARIES += libziparchive libselinux libdl_android.bootstrap
+ 
+-ifneq ($(wildcard system/core/libsparse/Android.mk),)
+ LOCAL_SHARED_LIBRARIES += libsparse
+-endif
+ 
+ include $(LOCAL_PATH)/orangefox.mk
+ 

@@ -1,0 +1,30 @@
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -3612,6 +3612,7 @@
+ 	full_filename = part_settings->Backup_Folder + "/" + Backup_FileName;
+ 
+ 	LOGINFO("Image filename is: %s\n", Backup_FileName.c_str());
++	gui_msg(Msg("nx733j_img_target=Target: {1} ({2})")(Mount_Point)(Actual_Block_Device));
+     if (Is_Super) {
+         if (!Can_Flash_Img || part_settings->adbbackup)
+             return false;
+--- a/gui/theme/common/languages/en.xml
++++ b/gui/theme/common/languages/en.xml
+@@ -449,6 +449,7 @@
+ 		<string name="mtp_base_path_missing">Media storage not found. Unable to enable MTP.</string>
+ 		<string name="image_flash_start">[IMAGE FLASH STARTED]</string>
+ 		<string name="img_to_flash">Image to flash: '{1}'</string>
++		<string name="nx733j_img_target">Target: {1} ({2})</string>
+ 		<string name="flash_unable_locate">Unable to locate '{1}' partition for flashing.</string>
+ 		<string name="no_part_flash">No partitions selected for flashing.</string>
+ 		<string name="too_many_flash">Too many partitions selected for flashing.</string>
+--- a/gui/theme/extra-languages/languages/es-ES.xml
++++ b/gui/theme/extra-languages/languages/es-ES.xml
+@@ -463,6 +463,7 @@
+ 		<string name="no_mtp">Soporte MTP no incluido</string>
+ 		<string name="image_flash_start">[FLASH DE IMAGEN INICIADO]</string>
+ 		<string name="img_to_flash">Imagen a flashear: '{1}'</string>
++		<string name="nx733j_img_target">Destino: {1} ({2})</string>
+ 		<string name="flash_unable_locate">No se encuentra la partición '{1}' para flashearla.</string>
+ 		<string name="no_part_flash">No ha seleccionado ninguna partición a flashear.</string>
+ 		<string name="too_many_flash">Demasiadas particiones seleccionadas para flashear.</string>
