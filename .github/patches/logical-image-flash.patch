@@ -1,0 +1,194 @@
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -23,6 +23,17 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/mount.h>
++#include <sys/file.h>
++#include <sys/ioctl.h>
++#include <sys/sysmacros.h>
++#include <linux/fs.h>
++#include <vector>
++#include <libdm/dm.h>
++#include <android-base/file.h>
++#include <android-base/unique_fd.h>
++#include <android-base/scopeguard.h>
++#include <algorithm>
++
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+@@ -3478,12 +3489,162 @@
+ 	return maxFileSize - 1;
+ }
+ 
++// NX733J: keep this lock alive through the write, using libsnapshot's lock path.
++// Fail closed on any non-idle/unknown state; never cancel or merge an OTA here.
++static android::base::unique_fd LockLogicalImageOTA() {
++    android::base::unique_fd lock(open("/metadata/ota", O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW));
++    if (!lock.ok() || flock(lock.get(), LOCK_EX | LOCK_NB) != 0)
++        return {};
++    std::string state;
++    if (!android::base::ReadFileToString("/metadata/ota/state", &state) ||
++        (!state.empty() && state != "none"))
++        return {};
++    DIR* snapshots = opendir("/metadata/ota/snapshots");
++    if (!snapshots)
++        return {};
++    bool empty = true;
++    errno = 0;
++    while (auto* entry = readdir(snapshots)) {
++        if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
++            empty = false;
++            break;
++        }
++    }
++    if (errno != 0)
++        empty = false;
++    closedir(snapshots);
++    if (!empty)
++        return {};
++    return lock;
++}
++
++// Require the selected slot's linear mapping directly onto super. In particular,
++// snapshot, snapshot-merge, dm-user and verity targets must never reach this writer.
++static bool CheckLogicalImageMapping(const std::string& name, const std::string& device) {
++    auto& dm = android::dm::DeviceMapper::Instance();
++    std::string mapped;
++    std::vector<android::dm::DeviceMapper::TargetInfo> table;
++    struct stat target_stat{}, mapped_stat{}, super_stat{};
++    if (!dm.GetDmDevicePathByName(name, &mapped) ||
++        stat(device.c_str(), &target_stat) != 0 || !S_ISBLK(target_stat.st_mode) ||
++        stat(mapped.c_str(), &mapped_stat) != 0 || !S_ISBLK(mapped_stat.st_mode) ||
++        target_stat.st_rdev != mapped_stat.st_rdev ||
++        stat("/dev/block/by-name/super", &super_stat) != 0 || !S_ISBLK(super_stat.st_mode) ||
++        !dm.GetTableInfo(name, &table) || table.empty())
++        return false;
++    for (const auto& target : table) {
++        unsigned major_number, minor_number;
++        unsigned long long offset;
++        char extra;
++        if (strcmp(target.spec.target_type, "linear") != 0 ||
++            sscanf(target.data.c_str(), "%u:%u %llu %c", &major_number, &minor_number, &offset, &extra) != 3 ||
++            makedev(major_number, minor_number) != super_stat.st_rdev)
++            return false;
++    }
++    return true;
++}
++
++// Write only within the existing allocation. Do not resize super, discard blocks,
++// change the slot, or alter backup/wipe policy to make an image fit.
++static bool WriteLogicalImage(const std::string& filename, const std::string& device,
++                              PartitionSettings* settings) {
++    android::base::unique_fd input(open(filename.c_str(), O_RDONLY | O_CLOEXEC));
++    struct stat input_stat{};
++    uint32_t magic = 0;
++    if (!input.ok() || fstat(input.get(), &input_stat) != 0 ||
++        !S_ISREG(input_stat.st_mode) || input_stat.st_size < static_cast<off_t>(sizeof(magic)) ||
++        !android::base::ReadFully(input.get(), &magic, sizeof(magic)) ||
++        lseek(input.get(), 0, SEEK_SET) != 0)
++        return false;
++    struct sparse_file* sparse = nullptr;
++    auto cleanup = android::base::make_scope_guard([&] { if (sparse) sparse_file_destroy(sparse); });
++    int64_t length = input_stat.st_size;
++    if (magic == SPARSE_HEADER_MAGIC) {
++        sparse = sparse_file_import(input.get(), true, false);
++        if (!sparse)
++            return false;
++        length = sparse_file_len(sparse, false, false);
++    }
++    android::base::unique_fd target(open(device.c_str(), O_RDONLY | O_CLOEXEC));
++    struct stat target_stat{};
++    uint64_t capacity = 0;
++    int read_only = 1;
++    if (length <= 0 || !target.ok() || fstat(target.get(), &target_stat) != 0 ||
++        !S_ISBLK(target_stat.st_mode) || ioctl(target.get(), BLKGETSIZE64, &capacity) != 0 ||
++        ioctl(target.get(), BLKROGET, &read_only) != 0 || read_only ||
++        static_cast<uint64_t>(length) > capacity) {
++        gui_err("logical_img_capacity=Image does not fit or logical target is not writable; resizing is not supported");
++        return false;
++    }
++    // Open the already inspected device and verify its identity again. Never
++    // create/truncate a regular file when a mapper alias is missing or stale.
++    android::base::unique_fd output(open(device.c_str(), O_WRONLY | O_CLOEXEC | O_EXCL));
++    struct stat output_stat{};
++    if (!output.ok() || fstat(output.get(), &output_stat) != 0 ||
++        !S_ISBLK(output_stat.st_mode) || output_stat.st_rdev != target_stat.st_rdev)
++        return false;
++    if (sparse) {
++        if (sparse_file_write(sparse, output.get(), false, false, false) < 0)
++            return false;
++    } else {
++        std::vector<char> buffer(1024 * 1024);
++        uint64_t remaining = length;
++        while (remaining) {
++            size_t count = std::min<uint64_t>(buffer.size(), remaining);
++            if (!android::base::ReadFully(input.get(), buffer.data(), count) ||
++                !android::base::WriteFully(output.get(), buffer.data(), count))
++                return false;
++            remaining -= count;
++            if (settings->progress)
++                settings->progress->UpdateSize(length - remaining);
++        }
++    }
++    if (fsync(output.get()) != 0)
++        return false;
++    if (settings->progress)
++        settings->progress->UpdateDisplayDetails(true);
++    return true;
++}
++
+ bool TWPartition::Flash_Image(PartitionSettings *part_settings) {
+ 	string Restore_File_System, full_filename;
+ 
+ 	full_filename = part_settings->Backup_Folder + "/" + Backup_FileName;
+ 
+ 	LOGINFO("Image filename is: %s\n", Backup_FileName.c_str());
++    if (Is_Super) {
++        if (!Can_Flash_Img || part_settings->adbbackup)
++            return false;
++        auto* metadata = PartitionManager.Find_Partition_By_Path("/metadata");
++        if (!metadata || !metadata->Is_Mounted()) {
++            gui_err("logical_img_metadata=Mount metadata before flashing a logical image");
++            return false;
++        }
++        auto ota_lock = LockLogicalImageOTA();
++        if (!ota_lock.ok()) {
++            gui_err("logical_img_ota=OTA state is busy or could not be verified; boot Android and finish updates first");
++            return false;
++        }
++        std::string name = Mount_Point == "/system_root" ? "system" : Mount_Point.substr(1);
++#ifdef AB_OTA_UPDATER
++        name += PartitionManager.Get_Active_Slot_Suffix();
++#endif
++        if (!CheckLogicalImageMapping(name, Actual_Block_Device)) {
++            gui_err("logical_img_mapping=Target is not the selected slot's direct linear mapping on super");
++            return false;
++        }
++        if (!UnMount(true) || Is_Mounted()) {
++            gui_err("logical_img_mounted=Cannot unmount logical image target");
++            return false;
++        }
++        gui_msg(Msg("flashing=Flashing {1}...")(Display_Name));
++        if (!WriteLogicalImage(full_filename, Actual_Block_Device, part_settings)) {
++            gui_err("logical_img_failed=Logical image flash failed; see recovery log");
++            LOGERR("Logical image flash failed for %s: %s\n", name.c_str(), strerror(errno));
++            return false;
++        }
++        return true;
++    }
+ 
+ 	if (Backup_Method == BM_FILES) {
+ 		gui_err("img_filesystem_unsupported=Direct IMG flashing is not supported for this filesystem partition");
+--- a/Android.mk
++++ b/Android.mk
+@@ -141,7 +141,7 @@
+ LOCAL_SHARED_LIBRARIES += libbootloader_message libcrecovery libtwrpdigest libc++ libaosprecovery libcrypto libbase 
+ LOCAL_SHARED_LIBRARIES += libziparchive libselinux libdl_android.bootstrap
+ 
+-LOCAL_SHARED_LIBRARIES += libsparse
++LOCAL_SHARED_LIBRARIES += libsparse libdm
+ 
+ include $(LOCAL_PATH)/orangefox.mk
+ 

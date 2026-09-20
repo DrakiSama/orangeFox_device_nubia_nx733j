@@ -1,0 +1,12 @@
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -4716,7 +4716,8 @@
+ 		list_size--;
+ 	}
+ 	superPartition->Backup_Display_Name += ")";
+-	superPartition->Can_Flash_Img = true;
++	// NX733J: super must never appear as a normal Install IMG target.
++	superPartition->Can_Flash_Img = false;
+ 	superPartition->Current_File_System = "emmc";
+ 	superPartition->Can_Be_Backed_Up = true;
+ 	superPartition->Is_Present = true;
