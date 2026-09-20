@@ -1,0 +1,18 @@
+#!/bin/bash
+# Source before lunch; OrangeFox consumes FOX_* from the environment.
+export FOX_AB_DEVICE=1
+export FOX_VIRTUAL_AB_DEVICE=1
+export FOX_VANILLA_BUILD=1
+export FOX_USE_BASH_SHELL=1
+export FOX_ASH_IS_BASH=1
+export FOX_USE_NANO_EDITOR=1
+export FOX_USE_TAR_BINARY=1
+export FOX_USE_SED_BINARY=1
+export FOX_USE_ZSTD_BINARY=1
+export FOX_USE_LZ4_BINARY=1
+export FOX_REPLACE_TOOLBOX_GETPROP=1
+export FOX_USE_GREP_BINARY=1
+export FOX_USE_BUSYBOX_BINARY=1
+export FOX_ENABLE_APP_MANAGER=1
+export FOX_DELETE_AROMAFM=1
+export FOX_MAINTAINER_PATCH_VERSION=1

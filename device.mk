@@ -14,14 +14,15 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/compression_wit
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
-$(call inherit-product, vendor/recovery/config/common.mk)
+# fox_12.1 official sync retains vendor/twrp for product rules and installs
+# OrangeFox hooks in build/make plus vendor/recovery/OrangeFox_A12.sh.
+$(call inherit-product, vendor/twrp/config/common.mk)
 
 BOARD_SHIPPING_API_LEVEL := 35
 PRODUCT_SHIPPING_API_LEVEL := 35
 
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 
-PRODUCT_APEX_SYSTEM_SERVER_JARS += com.android.crashrecovery:service-crashrecovery
 
 PRODUCT_PROPERTY_OVERRIDES += persist.sys.fuse.passthrough.enable=true
 

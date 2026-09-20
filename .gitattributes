@@ -14,3 +14,7 @@ security/** -text
 
 # Unified diffs prefix context lines with a space, including blank/tabbed lines.
 .github/patches/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab
+
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
