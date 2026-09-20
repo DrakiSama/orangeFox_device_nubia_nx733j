@@ -39,7 +39,12 @@ set -e
 declare -F lunch m >/dev/null
 [[ "${NOT_ORANGEFOX:-}" != 1 ]]
 source "$device/vendorsetup.sh"
-lunch ofrp_NX733J-eng
+if lunch ofrp_NX733J-eng > "$artifacts/lunch.log" 2>&1; then
+    cat "$artifacts/lunch.log"
+else
+    cat "$artifacts/lunch.log"
+    exit 1
+fi
 # Record only explicitly declared device flags; never export runner secrets.
 while read -r name; do printf '%s=%s\n' "$name" "${!name}"; done \
     < <(sed -n 's/^export \(FOX_[A-Z0-9_]*\)=.*/\1/p' "$device/vendorsetup.sh") \
