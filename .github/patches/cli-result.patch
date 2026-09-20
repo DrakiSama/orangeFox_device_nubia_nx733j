@@ -1,0 +1,333 @@
+diff --git a/gui/action.cpp b/gui/action.cpp
+index 293dd16..513609d 100755
+--- a/gui/action.cpp
++++ b/gui/action.cpp
+@@ -2416,11 +2416,12 @@ int GUIAction::flashimage(std::string arg __unused)
+ int GUIAction::twcmd(std::string arg)
+ {
+   operation_start("TWRP CLI Command");
++	int status = 0;
+   if (simulate)
+     simulate_progress_bar();
+   else
+-    OpenRecoveryScript::Run_CLI_Command(arg.c_str());
+-  operation_end(0);
++		status = OpenRecoveryScript::Run_CLI_Command(arg.c_str());
++	operation_end(status);
+   return 0;
+ }
+ 
+diff --git a/gui/gui.cpp b/gui/gui.cpp
+index 1f13ee2..720c32d 100644
+--- a/gui/gui.cpp
++++ b/gui/gui.cpp
+@@ -526,9 +526,13 @@ static void setup_ors_command()
+ }
+ 
+ // callback called after a CLI command was executed
+-static void ors_command_done()
++static void ors_command_done(int status)
+ {
+ 	gui_set_FILE(NULL);
++	// A binary trailer cannot be confused with installer text. EOF alone is
++	// not success: the client requires this completion result.
++	const unsigned char result[] = {0, 'T', 'W', static_cast<unsigned char>(status == 0 ? 0 : 1)};
++	fwrite(result, 1, sizeof(result), orsout);
+ 	fclose(orsout);
+ 	orsout = NULL;
+ 
+@@ -543,12 +547,11 @@ static void ors_command_done()
+ 
+ static void ors_command_read()
+ {
+-	char command[1024];
+-	int read_ret = read(ors_read_fd, &command, sizeof(command));
++	char command[1024] = {};
++	int read_ret = read(ors_read_fd, command, sizeof(command) - 1);
+ 
+ 	if (read_ret > 0) {
+-		command[1022] = '\n';
+-		command[1023] = '\0';
++		command[read_ret] = '\0';
+ 		LOGINFO("Command '%s' received\n", command);
+ 		orsout = fopen(ORS_OUTPUT_FILE, "w");
+ 		if (!orsout) {
+@@ -560,22 +563,27 @@ static void ors_command_read()
+ 			unlink(ORS_OUTPUT_FILE);
+ 			return;
+ 		}
++		if (strlen(command) > 510 || strpbrk(command, "\r\n")) {
++			fputs("Invalid CLI command\n", orsout);
++			ors_command_done(1);
++			return;
++		}
+ 		if (DataManager::GetIntValue("tw_busy") != 0) {
+ 			fputs("Failed, operation in progress\n", orsout);
+ 			LOGINFO("Command cannot be performed, operation in progress.\n");
+-			fclose(orsout);
++			ors_command_done(1);
+ 		} else {
+ 			if (strlen(command) == 11 && strncmp(command, "dumpstrings", 11) == 0) {
+ 				gui_set_FILE(orsout);
+ 				PageManager::GetResources()->DumpStrings();
+-				ors_command_done();
++				ors_command_done(0);
+ 			} else if (strlen(command) == 11 && strncmp(command, "reloadtheme", 11) == 0) {
+ 				PageManager::RequestReload();
+-				ors_command_done();
++				ors_command_done(0);
+ 			} else if (strlen(command) > 11 && strncmp(command, "changepage=", 11) == 0) {
+ 				char* pg = &command[11];
+ 				gui_changePage(pg);
+-				ors_command_done();
++				ors_command_done(0);
+ 			} else if (strlen(command) > 5 && strncmp(command, "xset ", 5) == 0) {
+ 				char* xsetcom = &command[5];
+ 				std::string setst = string(xsetcom);
+@@ -584,7 +592,7 @@ static void ors_command_read()
+ 
+ 				DataManager::GetValue(value, value);
+ 				DataManager::SetValue(varName, value);
+-				ors_command_done();
++				ors_command_done(0);
+ 			} else {
+ 				// mirror output messages
+ 				gui_set_FILE(orsout);
+diff --git a/openrecoveryscript.cpp b/openrecoveryscript.cpp
+index ede9994..97c5440 100755
+--- a/openrecoveryscript.cpp
++++ b/openrecoveryscript.cpp
+@@ -103,7 +103,7 @@ int OpenRecoveryScript::copy_script_file(string filename) {
+ 	return 0;
+ }
+ 
+-int OpenRecoveryScript::run_script_file(void) {
++int OpenRecoveryScript::run_script_file(bool cli) {
+ 	int ret_val = 0, cindex, line_len, i, remove_nl, install_cmd = 0, sideload = 0, tmp_tmp = 0;
+ 	char script_line[SCRIPT_COMMAND_SIZE], command[SCRIPT_COMMAND_SIZE],
+ 	     value[SCRIPT_COMMAND_SIZE], mount[SCRIPT_COMMAND_SIZE],
+@@ -484,7 +484,7 @@ int OpenRecoveryScript::run_script_file(void) {
+ 		gui_msg("done_ors=Done processing script file");
+ 		tmp_tmp = ret_val;
+ 		//* DJ9 - disable auto-reboot after incremental OTA updates? *//
+-		if (DataManager::GetIntValue(FOX_DISABLE_OTA_AUTO_REBOOT) == 1) 
++		if (!cli && DataManager::GetIntValue(FOX_DISABLE_OTA_AUTO_REBOOT) == 1)
+ 		  {
+ 		     ret_val = 3; // forces booting to the home page - also runs DM-Verity patch
+ 		  }
+@@ -516,7 +516,7 @@ int OpenRecoveryScript::run_script_file(void) {
+ 	   Run_Fox_Process_After_ORS(tmp_tmp);
+ 	// DJ9
+ 	
+-	if (sideload)
++	if (sideload && !cli)
+ 		ret_val = 1;  // Forces booting to the home page after sideload
+ 	return ret_val;
+ }
+@@ -747,11 +747,12 @@ int OpenRecoveryScript::Run_OpenRecoveryScript_Action() {
+ }
+ 
+ // this is called by the "twcmd" GUI action when a command is received via FIFO from the "twrp" command line tool
+-void OpenRecoveryScript::Run_CLI_Command(const char* command) {
++int OpenRecoveryScript::Run_CLI_Command(const char* command) {
+ 	string tmp = command;
+ 	std::vector<string> parts =
+ 		TWFunc::Split_String(tmp, " ");  // pats[0] is cmd, parts[1...] is args
+-	string cmd_str = parts[0];
++	string cmd_str = parts.empty() ? "" : parts[0];
++	int status = 1;
+ 
+ 	if (cmd_str == "runscript") {
+ 		if (parts.size() > 1) {
+@@ -759,7 +760,7 @@ void OpenRecoveryScript::Run_CLI_Command(const char* command) {
+ 			if (OpenRecoveryScript::copy_script_file(filename) == 0) {
+ 				LOGINFO("Unable to copy script file\n");
+ 			} else {
+-				OpenRecoveryScript::run_script_file();
++				status = OpenRecoveryScript::run_script_file(true);
+ 			}
+ 		} else {
+ 			LOGINFO("Missing parameter: script file name\n");
+@@ -768,7 +769,7 @@ void OpenRecoveryScript::Run_CLI_Command(const char* command) {
+ 		if (parts.size() > 1) {
+ 			string varname = parts[1];
+ 			string value;
+-			DataManager::GetValue(varname, value);
++			status = DataManager::GetValue(varname, value);
+ 			if (cmd_str == "getval")
+ 				gui_print("%s\n",value.c_str());
+ 			else
+@@ -787,17 +788,19 @@ void OpenRecoveryScript::Run_CLI_Command(const char* command) {
+ 				userid = parts[2];
+ 
+ 			gui_msg("decrypt_cmd=Attempting to decrypt data partition or user data via command line.");
+-			if (PartitionManager.Decrypt_Device(pass, atoi(userid.c_str())) == 0) {
++			status = PartitionManager.Decrypt_Device(pass, atoi(userid.c_str()));
++			if (status == 0) {
+ 				// set_page_done = 1;  // done by singleaction_page anyway
+ 				std::string orsFile = TWFunc::get_log_dir() + "/openrecoveryscript";
+ 				if (TWFunc::Path_Exists(orsFile)) {
+-					Run_OpenRecoveryScript_Action();
++					status = Run_OpenRecoveryScript_Action();
+ 				}
+ 			}
+ 		}
+ 	} else if (cmd_str == "console_message" || cmd_str == "console_warning" || cmd_str == "console_error") {
+ 		int i = cmd_str.length() + 1;
+-		if (tmp.length() > i) {
++		if (tmp.length() > static_cast<size_t>(i)) {
++			status = 0;
+ 			std::string s = "warning";
+ 			if (cmd_str == "console_error")
+ 				s = "error";
+@@ -807,13 +810,15 @@ void OpenRecoveryScript::Run_CLI_Command(const char* command) {
+ 			else
+ 				gui_print_color(s.c_str(), "%s\n", msg.c_str());
+ 		}
+-	} else if (OpenRecoveryScript::Insert_ORS_Command(command)) {
+-		OpenRecoveryScript::run_script_file();
++	} else if (!cmd_str.empty() && OpenRecoveryScript::Insert_ORS_Command(command)) {
++		status = OpenRecoveryScript::run_script_file(true);
+ 	}
+ 
+ 	// let the GUI close the output fd and restart the command listener
+-	call_after_cli_command();
++	status = status == 0 ? 0 : 1;
++	if (call_after_cli_command) call_after_cli_command(status);
+ 	LOGINFO("Done reading ORS command from command line\n");
++	return status;
+ }
+ 
+ int OpenRecoveryScript::remountrw(void)
+diff --git a/openrecoveryscript.hpp b/openrecoveryscript.hpp
+index 2b3a8ea..fe87e2a 100644
+--- a/openrecoveryscript.hpp
++++ b/openrecoveryscript.hpp
+@@ -28,12 +28,12 @@ using namespace std;
+ 
+ class OpenRecoveryScript
+ {
+-	typedef void (*VoidFunction)();
++	typedef void (*VoidFunction)(int status);
+ 	static VoidFunction call_after_cli_command;                                    // callback to GUI after Run_CLI_Command
+ 
+ 	static int check_for_script_file();                                            // Checks to see if the ORS file is present in /cache
+ 	static int copy_script_file(string filename);                                  // Copies a script file to the temp folder
+-	static int run_script_file();                                                  // Executes the commands in the ORS file
++	static int run_script_file(bool cli = false);                                                  // Executes the commands in the ORS file
+ 	static int Install_Command(string Zip);                                        // Installs a zip
+ 	static string Locate_Zip_File(string Path, string File);                       // Attempts to locate the zip file in storage
+ 	static int Backup_Command(string Options);                                     // Runs a backup
+@@ -42,7 +42,7 @@ public:
+ 	static void Run_OpenRecoveryScript();                                          // Starts the GUI Page for running OpenRecoveryScript
+ 	static int Run_OpenRecoveryScript_Action();                                    // Actually runs the ORS scripts for the GUI action
+ 	static void Call_After_CLI_Command(VoidFunction fn) { call_after_cli_command = fn; }
+-	static void Run_CLI_Command(const char* command);                              // Runs a command for orscmd (twrp binary)
++	static int Run_CLI_Command(const char* command);                              // Runs a command for orscmd (twrp binary)
+ 	static int remountrw();                                                        // Remount system and vendor rw
+ 	static void Run_Fox_Process_After_ORS(int result);			       // Runs the Deactivation_Process after standard ORS script (non-MIUI OTA)
+ };
+diff --git a/orscmd/orscmd.cpp b/orscmd/orscmd.cpp
+index 7d62b55..fa3d882 100644
+--- a/orscmd/orscmd.cpp
++++ b/orscmd/orscmd.cpp
+@@ -100,12 +100,39 @@ int do_getcap(const char* filename)
+ 	else
+ 		printf("getcap of %s failed: %s\n", filename, strerror(errno));
+ 
+-	return rc > 0;
++	return rc > 0 ? 0 : 1;
++}
++
++// Retain only the final four bytes; stream all other output without truncation.
++// A missing/invalid trailer (including a crashed recovery) is a failure.
++static int read_command_result(int fd) {
++	unsigned char buffer[516];
++	size_t pending = 0;
++	for (;;) {
++		ssize_t count = read(fd, buffer + pending, sizeof(buffer) - pending);
++		if (count < 0 && errno == EINTR) continue;
++		if (count < 0) { perror("Reading recovery result"); return 1; }
++		if (count == 0) break;
++		pending += static_cast<size_t>(count);
++		if (pending > 4) {
++			const size_t emit = pending - 4;
++			if (fwrite(buffer, 1, emit, stdout) != emit) return 1;
++			fflush(stdout);
++			memmove(buffer, buffer + emit, 4);
++			pending = 4;
++		}
++	}
++	if (pending == 4 && buffer[0] == 0 && buffer[1] == 'T' &&
++		buffer[2] == 'W' && buffer[3] <= 1)
++		return buffer[3];
++	fwrite(buffer, 1, pending, stdout);
++	fprintf(stderr, "Recovery closed the command without a valid result.\n");
++	return 1;
+ }
+ 
+ int main(int argc, char **argv) {
+-	int read_fd, write_fd, index;
+-	char command[1024], result[512];
++	int read_fd, write_fd;
++	char command[1024] = {};
+ 
+ 	if (argc < 2 || strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "?") == 0 || strcmp(argv[1], "-h") == 0) {
+ 		print_usage();
+@@ -135,19 +162,30 @@ int main(int argc, char **argv) {
+ 		return do_getcap(argv[2]);
+ 	}
+ 
+-	sprintf(command, "%s", argv[1]);
+-	for (index = 2; index < argc; index++) {
+-		sprintf(command, "%s %s", command, argv[index]);
++	size_t used = 0;
++	for (int index = 1; index < argc; ++index) {
++		const size_t len = strlen(argv[index]);
++		// ORS uses 512-byte lines including newline and NUL. Reject instead
++		// of splitting a long command into unintended script operations.
++		if (strpbrk(argv[index], "\r\n") || used + len + (index > 1 ? 1 : 0) > 510) {
++			fprintf(stderr, "Command too long or contains a newline.\n");
++			return 1;
++		}
++		if (index > 1) command[used++] = ' ';
++		memcpy(command + used, argv[index], len);
++		used += len;
+ 	}
+ 
+ 	write_fd = open(ORS_INPUT_FILE, O_WRONLY);
+ 	if (write_fd < 0) {
+ 		printf("OrangeFox does not appear to be running. Waiting for OrangeFox to start . . .\n");
+ 		printf("Press CTRL + C to quit.\n");
+-		while (write_fd < 0)
++		while (write_fd < 0) {
++			usleep(100000);
+ 			write_fd = open(ORS_INPUT_FILE, O_WRONLY);
++		}
+ 	}
+-	if (write(write_fd, command, sizeof(command)) != sizeof(command)) {
++	if (write(write_fd, command, used + 1) != static_cast<ssize_t>(used + 1)) {
+ 		printf("Error sending command.\n");
+ 		close(write_fd);
+ 		return -1;
+@@ -155,16 +193,11 @@ int main(int argc, char **argv) {
+ 	read_fd = open(ORS_OUTPUT_FILE, O_RDONLY);
+ 	if (read_fd < 0) {
+ 		printf("Unable to open %s for read.\n", ORS_OUTPUT_FILE);
+-		return -1;
+-	}
+-	memset(&result, 0, sizeof(result));
+-	while (read(read_fd, &result, sizeof(result)) > 0) {
+-		result[510] = '\n';
+-		result[511] = '\0';
+-		printf("%s", result);
+-		memset(&result, 0, sizeof(result));
++		close(write_fd);
++		return 1;
+ 	}
++	int status = read_command_result(read_fd);
+ 	close(write_fd);
+ 	close(read_fd);
+-	return 0;
++	return status;
+ }
