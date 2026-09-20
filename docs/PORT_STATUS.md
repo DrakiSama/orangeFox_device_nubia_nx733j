@@ -106,37 +106,32 @@ si existe una imagen que supera esas comprobaciones.
 Consultar `validation-results.txt` para el estado real del intento local de build. Hasta que exista
 una imagen validada, su tamaño y SHA-256 se consideran **no disponibles**.
 
-## Bloqueo confirmado de compilación
+## Corrección del contrato de API de recovery
 
-Se sincronizó una base oficial completa en WSL y se aplicó la serie sin conflictos.
-Las ocho suites pasaron sobre ese source. Tras corregir el include Virtual A/B,
-`lunch ofrp_NX733J-eng` termina con:
+El primer build de GitHub Actions confirmó el error de `config.mk:741` guardado en
+`build-lunch.log`: System SDK 32 frente a PRODUCT_SHIPPING_API_LEVEL 35. El mensaje
+posterior de repositorio/producto ausente era una consecuencia del fallo de dumpvars.
 
-```
-build/make/core/config.mk:741: error: BOARD_SYSTEMSDK_VERSIONS (32) must all be greater than or equal to PRODUCT_SHIPPING_API_LEVEL (35).
-```
+La revisión del source mostró que ese contrato corresponde al producto Android completo.
+En SDK 32, este producto de recovery deja PRODUCT_SHIPPING_API_LEVEL sin declarar y añade
+explícitamente `ro.product.first_api_level=35` a PRODUCT_VENDOR_PROPERTIES. Se conserva
+BOARD_SHIPPING_API_LEVEL=35, que main.mk convierte en `ro.board.first_api_level=35`.
+El Makefile de recovery concatena las propiedades vendor en prop.default. El validador
+ahora exige ambos valores 35 en el ramdisk final y rechaza ausencias o valores contradictorios.
+Para plataformas distintas de SDK 32, se mantiene la declaración PRODUCT_SHIPPING_API_LEVEL=35.
+No se modifica System SDK, crypto, FBE, particiones ni el firmware del teléfono.
 
-`config.mk` deriva el System SDK de la plataforma Android 12.1. El árbol preserva
-`PRODUCT_SHIPPING_API_LEVEL := 35` y `BOARD_SHIPPING_API_LEVEL := 35` del dispositivo.
-No se bajaron esos valores ni se inventó un SDK 35 en una plataforma SDK 32.
-`m recoveryimage` no llegó a ejecutarse; no existe artefacto final de este intento.
-El trabajo de build solicitado permanece **incompleto** por esta incompatibilidad.
+Esto corrige la integración del producto recovery; no incorpora nuevas APIs ni garantiza
+que los blobs modernos funcionen sobre esta base. La conclusión anterior de que este error
+por sí solo obligaba a migrar de plataforma era demasiado amplia. La compilación remota
+siguiente debe validar la corrección y mostrar cualquier incompatibilidad adicional.
+Los tests evalúan el fragmento Make real en SDK 32, 35 y 36, y prueban el rechazo de una
+propiedad de lanzamiento incorrecta en un ramdisk sintético.
 
-El sync fijado sólo ofrece 12.1 y 14.1. Se comprobó la rama recovery `fox_14.1`
-(`5839ceb2f7e9745fc68e7bd797d517c997f0d397`); el sync la denomina experimental y usa
-`twrp-14`. No apareció una rama remota `fox_16.0`. Android 14 aporta APIs más recientes
-(incluido trabajo de AIDL Weaver en el sync), pero su SDK 34 tampoco satisface por sí solo
-el requisito 35: no se presenta como solución automática de este bloqueo.
-
-La continuación requiere una integración OrangeFox sobre una plataforma API 35 o posterior,
-o un backport explícito y revisado de compatibilidad para recovery. Debe hacerse en commits
-separados, volver a portar los parches contra la nueva revisión y validar blobs, KeyMint/FBE,
-snapshots y ramdisk. La ventaja sería disponer de APIs contemporáneas al firmware; los riesgos
-son regresiones de descifrado, enlazado de blobs y comportamiento de snapshots/UI.
-No se afirma que exista hoy una rama OrangeFox oficial que resuelva todo lo anterior.
-
-Los logs guardados en `docs/validation-results.txt` y `docs/build-lunch.log` permiten
-reproducir el resultado sin confundir pruebas simuladas con una imagen compilada.
+Referencias del source revisado: `build/make/core/config.mk:716-742`,
+`build/make/core/main.mk:290-306`, `build/make/core/sysprop.mk:325-359` y
+`build/make/core/Makefile:2195-2209`. Los resultados anteriores en validation-results.txt
+son históricos; no certifican este nuevo commit. Toda nueva compilación usa GitHub Actions.
 
 ## Límites y riesgos conocidos
 

@@ -7,7 +7,7 @@ Producto: `ofrp_NX733J`. Rama publicada: `main`.
 
 - 🟡 Particiones EROFS, FBE v2, batería/ADSP, haptics Awinic, CPU tardía y diagnóstico integrados.
 - ✅ Pruebas de código y runtime simulado: consultar [resultados](docs/validation-results.txt).
-- ❌ Build bloqueado en `lunch`: System SDK 32 de fox_12.1 frente a API de lanzamiento 35 del dispositivo. No hay imagen final validada.
+- 🟡 Corregido el contrato de API del producto recovery para fox_12.1; pendiente de validación del nuevo build en Actions. No hay imagen final validada.
 - 🟡 Validación física de este port: pendiente en NX733J.
 - ⚠️ Flasheo IMG lógico: experimental, limitado a asignaciones existentes y sin OTA/snapshots activos.
 - ❌ WiFi no validado. No se anuncia compatibilidad de OTG hasta descartar identificación errónea de UFS.
@@ -24,7 +24,7 @@ Abrir **Actions → OrangeFox NX733J - GitHub hosted → Run workflow → main**
 La compilación se ejecuta en una VM `ubuntu-22.04` de GitHub, con swap, ccache y
 cuatro trabajos en paralelo, como el flujo hosted de TWRP. No requiere WSL ni runner local.
 Los logs y, cuando el build pasa, la imagen y SHA256SUMS se descargan desde **Artifacts**.
-El cambio de runner no corrige por sí solo el bloqueo SDK 32/API 35 descrito arriba.
+La API real de lanzamiento (35) se conserva y se comprueba en el ramdisk final.
 
 ## Pruebas sin teléfono
 

@@ -17,6 +17,13 @@ for flag in ['TW_INCLUDE_CRYPTO', 'TW_INCLUDE_CRYPTO_FBE', 'TW_INCLUDE_FBE_METAD
     assert flag + ' := true' in board
 assert 'OF_SUPPORT_ALL_BLOCK_OTA_UPDATES := 1' not in board
 assert 'FOX_VERSION=' not in (tree / 'vendorsetup.sh').read_text()
+# Evaluate the actual Make fragment, including inherited shipping API values.
+api = (tree / 'device.mk').read_text().split('# BEGIN NX733J recovery API contract')[1].split('# END NX733J recovery API contract')[0]
+for sdk in [32, 35, 36]:
+    fixture = f'PLATFORM_SDK_VERSION := {sdk}\nPRODUCT_SHIPPING_API_LEVEL := 35\n' + api
+    fixture += '\n.PHONY: check\ncheck:\n\t@echo "$(BOARD_SHIPPING_API_LEVEL)|$(PRODUCT_SHIPPING_API_LEVEL)|$(PRODUCT_VENDOR_PROPERTIES)"\n'
+    result = subprocess.check_output(['make', '--no-print-directory', '-f', '-', 'check'], input=fixture, text=True).strip()
+    assert result == ('35||ro.product.first_api_level=35' if sdk == 32 else '35|35|'), result
 fstab = (tree / 'recovery.fstab').read_text()
 rows = [line.split() for line in fstab.splitlines() if line.strip() and not line.startswith('#')]
 logical = {r[0] for r in rows if 'logical' in r[-1].split(',')}

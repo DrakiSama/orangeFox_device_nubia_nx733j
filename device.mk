@@ -21,8 +21,18 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 # OrangeFox hooks in build/make plus vendor/recovery/OrangeFox_A12.sh.
 $(call inherit-product, vendor/twrp/config/common.mk)
 
+# BEGIN NX733J recovery API contract
 BOARD_SHIPPING_API_LEVEL := 35
+ifeq ($(PLATFORM_SDK_VERSION),32)
+# fox_12.1 builds a standalone recovery, not the stock Android 15 product.
+# Do not request an unavailable vendor Java System SDK or forge its version.
+# Preserve the actual device launch API in recovery's merged prop.default.
+PRODUCT_SHIPPING_API_LEVEL :=
+PRODUCT_VENDOR_PROPERTIES += ro.product.first_api_level=35
+else
 PRODUCT_SHIPPING_API_LEVEL := 35
+endif
+# END NX733J recovery API contract
 
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 

@@ -54,6 +54,10 @@ for path in root.rglob('*'):
         for line in path.read_text().splitlines():
             if re.match(r'^\s*(service|exec|exec_background)\s', line):
                 for shell in re.findall(r'/(?:sbin|system/bin|vendor/bin)/\w*sh\b', line): resolve(shell)
+props = resolve('prop.default').read_text().splitlines()
+for name in ['ro.product.first_api_level', 'ro.board.first_api_level']:
+    values = [line.split('=', 1)[1].strip() for line in props if line.startswith(name + '=')]
+    assert values and set(values) == {'35'}, (name, values)
 fstab = resolve('system/etc/recovery.fstab').read_text()
 assert 'odm_dlkm' not in fstab
 for part in ['system', 'system_ext', 'product', 'vendor', 'odm', 'vendor_dlkm', 'system_dlkm']:

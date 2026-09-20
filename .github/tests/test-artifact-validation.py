@@ -31,7 +31,12 @@ with tempfile.TemporaryDirectory() as temp:
     shell = root/'system/bin/mksh'
     shell.write_bytes(b'\x7fELF-test-only')
     (root/'system/bin/sh').symlink_to('/system/bin/mksh')
+    props = root/'prop.default'
+    props.write_text('ro.product.first_api_level=35\nro.board.first_api_level=35\n')
     run('verify-ramdisk.py', root)
+    props.write_text('ro.product.first_api_level=32\nro.board.first_api_level=35\n')
+    run('verify-ramdisk.py', root, success=False)
+    props.write_text('ro.product.first_api_level=35\nro.board.first_api_level=35\n')
     shell.unlink()
     run('verify-ramdisk.py', root, success=False)
     shell.write_bytes(b'\x7fELF-test-only')
