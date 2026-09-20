@@ -1,173 +1,79 @@
-name: OrangeFox Builder - NX733J
-
+name: OrangeFox NX733J validated build
 on:
   workflow_dispatch:
     inputs:
-      OFRP_MANIFEST_URL:
-        description: "OrangeFox manifest url"
-        required: true
-        default: "https://gitlab.com/OrangeFox/platform_manifest"
-      OFRP_MANIFEST_BRANCH:
-        description: "OrangeFox branch"
-        required: true
-        default: "fox_12.1"
-      DEVICE_TREE_URL:
-        description: "Device tree url"
-        required: true
-        default: "https://github.com/DrakiSama/orangeFox_device_nubia_nx733j"
-      DEVICE_TREE_BRANCH:
-        description: "Device tree branch"
-        required: true
-        default: "main"
-      DEVICE_PATH:
-        description: "Device path device/"
-        required: true
-        default: "nubia/NX733J"
-      DEVICE_NAME:
-        description: "Device name"
-        required: true
-        default: "NX733J"
-      BUILD_PARTITION:
-        description: "Build partition (recovery or boot)"
-        required: true
-        default: "recovery"
-
+      runner:
+        description: Linux runner (self-hosted must have Android build dependencies)
+        type: choice
+        default: self-hosted
+        options:
+          - self-hosted
+          - ubuntu-22.04
+permissions:
+  contents: read
+concurrency:
+  group: orangefox-nx733j-build
+  cancel-in-progress: false
 jobs:
   build:
-    runs-on: self-hosted
-    permissions:
-      contents: write
-    env:
-      BUILD_DIR: ~/orangefox
-      CCACHE_DIR: ~/.ccache
-      CCACHE_MAXSIZE: 10G
-
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    defaults:
+      run:
+        shell: bash
     steps:
-    - name: Show build info
-      run: |
-        echo "BUILD_DATE=$(date +%F)" >> "$GITHUB_ENV"
-        echo "LUNCH_TARGET=${{ github.event.inputs.DEVICE_NAME }}" >> "$GITHUB_ENV"
-        cat <<EOF
-        ========================================
-        OrangeFox Recovery Build
-        ========================================
-        Manifest:    ${{ github.event.inputs.OFRP_MANIFEST_URL }} (${{ github.event.inputs.OFRP_MANIFEST_BRANCH }})
-        Device tree: ${{ github.event.inputs.DEVICE_TREE_URL }} (${{ github.event.inputs.DEVICE_TREE_BRANCH }})
-        Device:      ${{ github.event.inputs.DEVICE_NAME }}
-        Path:        device/${{ github.event.inputs.DEVICE_PATH }}
-        Target:      ${{ github.event.inputs.BUILD_PARTITION }}.img
-        Date:        $(date)
-        ========================================
-        EOF
-
-    - name: Maximize build space
-      run: |
-        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc 2>/dev/null || true
-        sudo rm -rf /usr/local/share/boost /usr/lib/jvm /usr/local/lib/heroku 2>/dev/null || true
-        sudo rm -rf /opt/hostedtoolcache /usr/local/.ghcup 2>/dev/null || true
-        df -h /
-
-    - name: Setup ccache
-      run: |
-        mkdir -p "${{ env.CCACHE_DIR }}"
-        ccache --set-config=cache_dir="${{ env.CCACHE_DIR }}"
-        ccache --set-config=max_size="${{ env.CCACHE_MAXSIZE }}"
-        ccache --set-config=compression=true
-        echo "USE_CCACHE=1" >> "$GITHUB_ENV"
-
-    - name: Setup swap file
-      run: |
-        sudo swapoff -a 2>/dev/null || true
-        sudo rm -f /swapfile 2>/dev/null || true
-        sudo dd if=/dev/zero of=/swapfile bs=1M count=8192 status=progress
-        sudo chmod 600 /swapfile
-        sudo mkswap /swapfile
-        sudo swapon /swapfile -p 1000
-        swapon --show
-        free -h
-
-    - name: Git config
-      run: |
-        git config --global user.name "${{ github.actor }}"
-        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-
-    - name: Sync OrangeFox source
-      run: |
-        if [ ! -f "${{ env.BUILD_DIR }}/build/envsetup.sh" ]; then
-          repo init -u ${{ github.event.inputs.OFRP_MANIFEST_URL }} \
-                    -b ${{ github.event.inputs.OFRP_MANIFEST_BRANCH }} \
-                    --depth=1
-          repo sync -c --no-tags --optimized-fetch --prune -j$(nproc)
-        else
-          echo "Source already synced, skipping..."
-        fi
-      working-directory: ${{ env.BUILD_DIR }}
-
-    - name: Clean stale artifacts
-      run: |
-        rm -rf out/target/product/${{ github.event.inputs.DEVICE_NAME }}/recovery/root/etc
-      working-directory: ${{ env.BUILD_DIR }}
-
-    - name: Clone device tree
-      run: |
-        rm -rf device/${{ github.event.inputs.DEVICE_PATH }}
-        git clone ${{ github.event.inputs.DEVICE_TREE_URL }} \
-                  -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} \
-                  device/${{ github.event.inputs.DEVICE_PATH }}
-      working-directory: ${{ env.BUILD_DIR }}
-
-    - name: Inject commit hash
-      run: |
-        HASH=$(git rev-parse --short HEAD)
-        sed -i "s/TW_DEVICE_VERSION := by Draki/TW_DEVICE_VERSION := by Draki ($HASH)/" BoardConfig.mk
-        echo "TW_DEVICE_VERSION: $(grep 'TW_DEVICE_VERSION' BoardConfig.mk)"
-      working-directory: ${{ env.BUILD_DIR }}/device/${{ github.event.inputs.DEVICE_PATH }}
-
-    - name: Generate changelog
-      run: |
-        {
-          echo "OrangeFox R12.1 - ${{ github.event.inputs.DEVICE_NAME }}"
-          echo "Build date: $(date)"
-          echo "Manifest: ${{ github.event.inputs.OFRP_MANIFEST_URL }} (${{ github.event.inputs.OFRP_MANIFEST_BRANCH }})"
-          echo ""
-          echo "Changelog:"
-          set +e
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
-          if [ $? -eq 0 ]; then
-            git log "$LAST_TAG"..HEAD --pretty=format:"- %h: %s"
-          else
-            git log --pretty=format:"- %h: %s"
-          fi
-        } > INFO.txt
-        cat INFO.txt
-      working-directory: ${{ env.BUILD_DIR }}/device/${{ github.event.inputs.DEVICE_PATH }}
-
-    - name: Build OrangeFox Recovery
-      run: |
-        source build/envsetup.sh
-        export ALLOW_MISSING_DEPENDENCIES=true
-        export USE_CCACHE=1
-        lunch ofrp_${{ env.LUNCH_TARGET }}
-        make ${{ github.event.inputs.BUILD_PARTITION }}image -j$(nproc) 2>&1 | tail -100
-      working-directory: ${{ env.BUILD_DIR }}
-
-    - name: Prepare artifacts
-      run: |
-        ARTIFACT="OrangeFox-R12.1-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}.img"
-        cp out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_PARTITION }}.img \
-           "$ARTIFACT"
-        echo "ARTIFACT=$ARTIFACT" >> "$GITHUB_ENV"
-        ls -lh "$ARTIFACT"
-      working-directory: ${{ env.BUILD_DIR }}
-
-    - name: Upload to Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          ${{ env.BUILD_DIR }}/${{ env.ARTIFACT }}
-          ${{ env.BUILD_DIR }}/device/${{ github.event.inputs.DEVICE_PATH }}/INFO.txt
-        name: OrangeFox-R12.1-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}
-        tag_name: v${{ env.BUILD_DATE }}-${{ github.run_id }}
-        body_path: ${{ env.BUILD_DIR }}/device/${{ github.event.inputs.DEVICE_PATH }}/INFO.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare paths
+        run: |
+          set -euo pipefail
+          echo "FOX_ROOT=$RUNNER_TEMP/fox-nx733j-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          mkdir -p "$GITHUB_WORKSPACE/build-artifacts"
+      - name: Prepare disposable hosted runner
+        if: inputs.runner == 'ubuntu-22.04'
+        run: |
+          set -euo pipefail
+          [[ "$RUNNER_ENVIRONMENT" == github-hosted ]]
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache
+          sudo apt-get update
+          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python3 python-is-python3 libssl-dev liblz4-tool lzop bc rsync ccache openjdk-11-jdk-headless
+          mkdir -p "$HOME/bin"
+          curl --fail --location https://storage.googleapis.com/git-repo-downloads/repo -o "$HOME/bin/repo"
+          chmod +x "$HOME/bin/repo"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Sync official OrangeFox 12.1 into a new build directory
+        run: |
+          set -euo pipefail
+          [[ ! -e "$FOX_ROOT" ]]
+          command -v repo
+          command -v ccache
+          sync_dir="$RUNNER_TEMP/fox-sync-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          git clone https://gitlab.com/OrangeFox/sync.git "$sync_dir"
+          git -C "$sync_dir" checkout --detach "$(cat .github/sync-revision)"
+          cd "$sync_dir"
+          bash orangefox_sync.sh --branch 12.1 --path "$FOX_ROOT" 2>&1 | tee "$GITHUB_WORKSPACE/build-artifacts/sync.log"
+          for item in 'bootable/recovery:recovery' 'vendor/recovery:vendor'; do
+            project=${item%:*}
+            pin=$(cat "$GITHUB_WORKSPACE/.github/${item#*:}-revision")
+            git -C "$FOX_ROOT/$project" fetch origin "$pin"
+            git -C "$FOX_ROOT/$project" checkout --detach "$pin"
+          done
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.FOX_ROOT }}/out/ccache
+          key: fox12-nx733j-ccache-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}
+          restore-keys: fox12-nx733j-ccache-${{ runner.os }}-
+      - name: Test, build exact device commit and inspect final ramdisk
+        run: |
+          set -Ee -o pipefail
+          cd "$FOX_ROOT"
+          bash "$GITHUB_WORKSPACE/tools/build-validated.sh" "$GITHUB_WORKSPACE/build-artifacts"
+      - name: Upload artifacts and diagnostic logs (no release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrangeFox-NX733J-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

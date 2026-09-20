@@ -196,7 +196,8 @@ TW_CUSTOM_CPU_TEMP_PATH := "/tmp/nx733j-cpu-temp"
 TW_BACKUP_EXCLUSIONS := /data/fonts
 TW_HAS_USB_OTG := true
 TW_CUSTOM_BATTERY_PATH := "/sys/class/power_supply/battery"
-TW_DEVICE_VERSION := by Draki
+TW_DEVICE_VERSION := by Draki local
+-include $(DEVICE_PATH)/build-version.mk
 
 # OrangeFox Specific Flags
 OF_SCREEN_H := 2400

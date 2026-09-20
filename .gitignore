@@ -6,3 +6,7 @@
 
 # Actions-generated display version.
 /build-version.mk
+
+/build-artifacts/
+__pycache__/
+*.pyc

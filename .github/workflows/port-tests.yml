@@ -1,0 +1,24 @@
+name: OrangeFox port regression tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Fetch reviewed OrangeFox and run tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init "$RUNNER_TEMP/fox-recovery"
+          git -C "$RUNNER_TEMP/fox-recovery" remote add origin https://gitlab.com/OrangeFox/bootable/Recovery.git
+          git -C "$RUNNER_TEMP/fox-recovery" fetch --depth=1 origin "$(cat .github/recovery-revision)"
+          git -C "$RUNNER_TEMP/fox-recovery" checkout --detach FETCH_HEAD
+          python3 tools/apply-recovery-patches.py "$RUNNER_TEMP/fox-recovery"
+          python3 tools/validate-port.py "$RUNNER_TEMP/fox-recovery"
