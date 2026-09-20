@@ -1,5 +1,13 @@
+on post-fs-data
+    chown system system /dev/thp
+    chmod 666 /dev/thp
+    chown system system /dev/input_agent
+    chmod 666 /dev/input_agent
+    start ztethp
+
 service ztethp /vendor/bin/odm_tsc
     class core
-    user root
-    group root
-    oneshot
+    user system
+    group system root
+    capabilities SYS_NICE
+    seclabel u:r:recovery:s0

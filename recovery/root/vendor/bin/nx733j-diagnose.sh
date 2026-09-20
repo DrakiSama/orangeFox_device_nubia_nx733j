@@ -1,8 +1,9 @@
 #!/system/bin/sh
 # Read-only support report. No serials, user files, writes, mounts or settings.
 export PATH=/sbin:/system/bin
-echo 'NX733J recovery diagnostics'
-for property in ro.twrp.version ro.twrp.device.version ro.boot.slot_suffix sys.usb.config sys.usb.state init.svc.vendor.recovery-hardware init.svc.vendor.recovery-cpu; do
+echo 'NX733J OrangeFox recovery diagnostics'
+echo 'A stopped oneshot helper can mean success; check its output and sensor state.'
+for property in ro.orangefox.version ro.twrp.version ro.twrp.device.version ro.boot.slot_suffix sys.usb.config sys.usb.state init.svc.vendor.recovery-hardware init.svc.vendor.recovery-cpu; do
     printf '%s: ' "$property"
     getprop "$property"
 done
@@ -35,7 +36,7 @@ for zone in /sys/class/thermal/thermal_zone*; do
     [ -r "$zone/type" ] || continue
     [ "$(cat "$zone/type")" = cpuss-0-0 ] || continue
     cpu_found=true
-    printf 'CPU cpuss-0-0 (millidegrees C): '; cat "$zone/temp"
+    printf 'CPU cpuss-0-0 (millidegrees C): '; cat "$zone/temp" 2>/dev/null || echo unavailable
 done
 $cpu_found || echo 'CPU sensor cpuss-0-0: absent'
 slot=$(getprop ro.boot.slot_suffix)

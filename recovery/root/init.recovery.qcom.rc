@@ -55,7 +55,7 @@ on boot
 # aw9620x.ko ya están cargados, así que el daemon de touch arranca aquí.
 # (twrp.variant.files_copied no existe en OrangeFox y nunca dispararía.)
 on property:twrp.modules.loaded=true
-    exec u:r:recovery:s0 -- /system/bin/sh /sbin/mount_vendor_dlkm.sh
+    exec_background u:r:recovery:s0 -- /system/bin/sh /sbin/mount_vendor_dlkm.sh
     # Firmware modem
     mkdir /firmware
     mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /firmware ro
