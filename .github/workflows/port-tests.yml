@@ -22,3 +22,12 @@ jobs:
           git -C "$RUNNER_TEMP/fox-recovery" checkout --detach FETCH_HEAD
           python3 tools/apply-recovery-patches.py "$RUNNER_TEMP/fox-recovery"
           python3 tools/validate-port.py "$RUNNER_TEMP/fox-recovery"
+      - name: Check reviewed build-system compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init "$RUNNER_TEMP/fox-build-make"
+          git -C "$RUNNER_TEMP/fox-build-make" remote add origin https://github.com/TeamWin/android_build.git
+          git -C "$RUNNER_TEMP/fox-build-make" fetch --depth=1 origin "$(cat .github/build-revision)"
+          git -C "$RUNNER_TEMP/fox-build-make" checkout --detach FETCH_HEAD
+          python3 tools/apply-build-patches.py "$RUNNER_TEMP/fox-build-make"

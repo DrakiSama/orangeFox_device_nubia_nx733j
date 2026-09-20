@@ -133,6 +133,21 @@ Referencias del source revisado: `build/make/core/config.mk:716-742`,
 `build/make/core/Makefile:2195-2209`. Los resultados anteriores en validation-results.txt
 son históricos; no certifican este nuevo commit. Toda nueva compilación usa GitHub Actions.
 
+## Compatibilidad de system_dlkm en el build
+
+El build de Actions `35533627202` superó la comprobación de API y encontró el siguiente
+límite de Android 12.1: la lista permitida de particiones dinámicas en config.mk no incluye
+`system_dlkm`. El nuevo parche `.github/build-patches/system-dlkm-name.patch` añade únicamente
+ese nombre; conserva la validación de nombres y todas las particiones/tamaños del dispositivo.
+Se aplica antes de lunch y su diff queda registrado entre los artefactos de fuentes del build.
+
+El aplicador exige el SHA-256 exacto del config.mk revisado y prueba su fragmento Make real:
+antes rechaza el mapa NX733J, después acepta sus siete particiones y sigue rechazando nombres
+inválidos. CI usa TeamWin/android_build `1b692e2248609f50a27c48cce53b7445cecdcfc5`.
+Esto permite declarar el mapa stock para `recoveryimage`; no implementa un generador de
+system_dlkm.img ni autoriza fabricar o flashear super. El código genérico de releasetools
+itera los nombres del grupo, pero no se valida aquí la construcción de una ROM completa.
+
 ## Límites y riesgos conocidos
 
 - FBE con PIN, batería y haptics tienen evidencia del TWRP de referencia, no de este nuevo OrangeFox.

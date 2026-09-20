@@ -12,6 +12,7 @@ mkdir -p "$artifacts" device/nubia/NX733J
 revision=$(git -C "$tree" rev-parse HEAD)
 git -C "$tree" archive "$revision" | tar -x -C device/nubia/NX733J
 device=$root/device/nubia/NX733J
+python3 "$device/tools/apply-build-patches.py" "$root/build/make" | tee "$artifacts/build-compat.log"
 python3 "$device/tools/apply-recovery-patches.py" "$root/bootable/recovery"
 python3 "$device/tools/validate-port.py" "$root/bootable/recovery" | tee "$artifacts/tests.log"
 repo manifest -r -o "$artifacts/manifest.xml"
