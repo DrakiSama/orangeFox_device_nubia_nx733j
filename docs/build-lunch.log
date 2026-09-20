@@ -1,0 +1,12 @@
+[1mbuild/make/core/config.mk:741: [31merror: [0m[1mBOARD_SYSTEMSDK_VERSIONS (32) must all be greater than or equal to PRODUCT_SHIPPING_API_LEVEL (35).[0m
+02:22:26 dumpvars failed with: exit status 1
+Device NX733J not found. Attempting to retrieve device repository from TeamWin Github (http://github.com/TeamWin).
+Repository for NX733J not found in the TeamWin Github repository list.
+If this is in error, you may need to manually add it to your .repo/local_manifests/roomservice.xml
+[1mbuild/make/core/config.mk:741: [31merror: [0m[1mBOARD_SYSTEMSDK_VERSIONS (32) must all be greater than or equal to PRODUCT_SHIPPING_API_LEVEL (35).[0m
+02:22:28 dumpvars failed with: exit status 1
+[1mbuild/make/core/config.mk:741: [31merror: [0m[1mBOARD_SYSTEMSDK_VERSIONS (32) must all be greater than or equal to PRODUCT_SHIPPING_API_LEVEL (35).[0m
+02:22:30 dumpvars failed with: exit status 1
+
+** Don't have a product spec for: 'ofrp_NX733J'
+** Do you have the right repo manifest?

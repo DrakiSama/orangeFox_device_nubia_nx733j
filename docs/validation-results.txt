@@ -1,0 +1,42 @@
+Device tree funcional probado: 24d087d
+Recovery base: 857e3fed0bcd86b6fa90ac6b951cceaa2c3c7e96
+Entorno: WSL LineageOS, source oficial fox_12.1
+
+
+=== test-cli-result.py ===
+CLI: 36 FIFO scenarios, local error cases, dispatcher, sideload and GUI completion/action checks passed
+
+=== test-cpu-discovery.py ===
+CPU discovery: 5 scenarios passed (late probe, missing sensor, PMIC rejection, link failure)
+
+=== test-late-cpu-sensor.py ===
+CPU sensor scenario passed
+CPU sensor scenario passed
+TW_NO_CPU_TEMP := true
+TW_NO_CPU_TEMP := true
+CPU sensor scenario passed
+
+=== test-image-preflight.py ===
+11 sparse preflight cases passed
+11 sparse preflight cases passed
+
+=== test-logical-image.py ===
+47 logical image cases passed (simulated I/O)
+
+=== test-flags-parser.py ===
+twrp.flags: comments, whitespace, columns, labels, malformed/overlong lines, duplicates and EOF passed
+
+=== test-device-tree.py ===
+Device: partition/FBE invariants, protected targets, init service references, XML and shell checks passed
+
+=== test-artifact-validation.py ===
+Artifacts: valid root, absolute shell symlink, missing shell, CPIO extraction, invalid archive and oversize rejection passed
+
+All eight test suites passed. Hardware and full Android build are separate validations.
+
+Build: BLOQUEADO en lunch, SDK 32 < PRODUCT_SHIPPING_API_LEVEL 35.
+m recoveryimage: no ejecutado (lunch fallido).
+recovery.img, tamaño y SHA-256: no disponibles.
+Ramdisk final real: no validado.
+Hardware: no validado.
+Ver build-lunch.log y PORT_STATUS.md.
