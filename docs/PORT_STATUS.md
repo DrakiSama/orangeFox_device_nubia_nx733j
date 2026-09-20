@@ -141,7 +141,8 @@ límite de Android 12.1: la lista permitida de particiones dinámicas en config.
 ese nombre; conserva la validación de nombres y todas las particiones/tamaños del dispositivo.
 Se aplica antes de lunch y su diff queda registrado entre los artefactos de fuentes del build.
 
-El aplicador exige el SHA-256 exacto del config.mk revisado y prueba su fragmento Make real:
+El aplicador exige uno de dos SHA-256 exactos revisados: config.mk de TeamWin o ese mismo
+archivo con el hook oficial OrangeFox_A12.sh añadido por sync. Prueba su fragmento Make real:
 antes rechaza el mapa NX733J, después acepta sus siete particiones y sigue rechazando nombres
 inválidos. CI usa TeamWin/android_build `1b692e2248609f50a27c48cce53b7445cecdcfc5`.
 Esto permite declarar el mapa stock para `recoveryimage`; no implementa un generador de

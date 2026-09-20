@@ -9,8 +9,9 @@ tree = Path(__file__).resolve().parents[1]
 build = Path(sys.argv[1]).resolve()
 config = build / 'core/config.mk'
 original = config.read_bytes()
-expected = (tree / '.github/build-config-sha256').read_text().strip()
-if hashlib.sha256(original).hexdigest() != expected:
+# Exact reviewed variants: TeamWin base and the official OrangeFox post-hook.
+expected = set((tree / '.github/build-config-sha256').read_text().split())
+if hashlib.sha256(original).hexdigest() not in expected:
     sys.exit('Unreviewed build/make/core/config.mk; review before applying compatibility patch')
 old = 'valid_super_partition_list := system vendor product system_ext odm vendor_dlkm odm_dlkm'
 text = original.decode()
