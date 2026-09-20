@@ -183,12 +183,14 @@
  		gui_err("img_filesystem_unsupported=Direct IMG flashing is not supported for this filesystem partition");
 --- a/Android.mk
 +++ b/Android.mk
-@@ -141,7 +141,7 @@
+@@ -141,7 +141,9 @@
  LOCAL_SHARED_LIBRARIES += libbootloader_message libcrecovery libtwrpdigest libc++ libaosprecovery libcrypto libbase 
  LOCAL_SHARED_LIBRARIES += libziparchive libselinux libdl_android.bootstrap
  
 -LOCAL_SHARED_LIBRARIES += libsparse
-+LOCAL_SHARED_LIBRARIES += libsparse libdm
++# Android 12.1 exports libdm only as a static library (with UUID helpers).
++LOCAL_STATIC_LIBRARIES += libdm libext2_uuid
++LOCAL_SHARED_LIBRARIES += libsparse
  
  include $(LOCAL_PATH)/orangefox.mk
  

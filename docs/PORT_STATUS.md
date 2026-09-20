@@ -149,6 +149,14 @@ Esto permite declarar el mapa stock para `recoveryimage`; no implementa un gener
 system_dlkm.img ni autoriza fabricar o flashear super. El código genérico de releasetools
 itera los nombres del grupo, pero no se valida aquí la construcción de una ROM completa.
 
+## Enlace de libdm en Android 12.1
+
+Actions `35535105449` superó lunch y Soong, pero Ninja buscó un libdm.so inexistente.
+`system/core/fs_mgr/libdm/Android.bp` declara libdm como cc_library_static, con
+libext2_uuid en static_libs. El parche de flasheo lógico ahora enlaza ambas estáticamente;
+libsparse permanece compartida. No se eliminó libdm ni se alteraron los controles del writer.
+La confirmación de enlace final corresponde al siguiente build remoto, no a los tests simulados.
+
 ## Límites y riesgos conocidos
 
 - FBE con PIN, batería y haptics tienen evidencia del TWRP de referencia, no de este nuevo OrangeFox.
