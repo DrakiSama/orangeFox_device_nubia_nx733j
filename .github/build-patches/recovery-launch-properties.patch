@@ -1,0 +1,19 @@
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -2133,6 +2133,8 @@
+ 
+ INSTALLED_RECOVERY_BUILD_PROP_TARGET := $(TARGET_RECOVERY_ROOT_OUT)/prop.default
+ 
++$(INSTALLED_RECOVERY_BUILD_PROP_TARGET): PRIVATE_DEVICE_RECOVERY_PROPERTIES := $(TARGET_RECOVERY_ADDITIONAL_PROPERTIES)
++
+ $(INSTALLED_RECOVERY_BUILD_PROP_TARGET): PRIVATE_RECOVERY_UI_PROPERTIES := \
+     TARGET_RECOVERY_UI_ANIMATION_FPS:animation_fps \
+     TARGET_RECOVERY_UI_MARGIN_HEIGHT:margin_height \
+@@ -2175,6 +2177,7 @@
+ 	$(hide) cat $(INSTALLED_PRODUCT_BUILD_PROP_TARGET) >> $@
+ 	$(hide) cat $(INSTALLED_SYSTEM_EXT_BUILD_PROP_TARGET) >> $@
+ 	$(call append-recovery-ui-properties,$(PRIVATE_RECOVERY_UI_PROPERTIES),$@)
++	$(hide) $(foreach prop,$(PRIVATE_DEVICE_RECOVERY_PROPERTIES),echo "$(prop)" >> $@;) true
+ 
+ # Only install boot/etc/build.prop to recovery image on recovery_as_boot.
+ # On device with dedicated recovery partition, the file should come from the boot

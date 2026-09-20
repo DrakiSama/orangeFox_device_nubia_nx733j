@@ -230,3 +230,11 @@ OF_SUPPORT_ALL_BLOCK_OTA_UPDATES := 0
 OF_FIX_DECRYPTION_ON_DATA_MEDIA := 0
 OF_USE_LZMA_COMPRESSION := 0
 OF_USE_LZ4_COMPRESSION := 1
+
+# BEGIN NX733J recovery-only launch properties
+ifeq ($(PLATFORM_SDK_VERSION),32)
+# Do not declare a SDK-35 vendor image while building SDK-32 recovery userspace.
+# The physical launch API belongs in recovery's final property file.
+TARGET_RECOVERY_ADDITIONAL_PROPERTIES := ro.product.first_api_level=35 ro.board.first_api_level=35
+endif
+# END NX733J recovery-only launch properties

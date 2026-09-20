@@ -37,8 +37,16 @@ def check(source, names, success):
 check(text, partitions, False)
 check(patched, partitions, True)
 check(patched, partitions + ' invalid_partition', False)
-patch = tree / '.github/build-patches/system-dlkm-name.patch'
-subprocess.run(['git', '-C', str(build), 'apply', '--check', str(patch)], check=True)
-subprocess.run(['git', '-C', str(build), 'apply', str(patch)], check=True)
+makefile = build / 'core/Makefile'
+make_expected = set((tree / '.github/build-makefile-sha256').read_text().split())
+if hashlib.sha256(makefile.read_bytes()).hexdigest() not in make_expected:
+    sys.exit('Unreviewed build/make/core/Makefile; review recovery property integration')
+patches = [tree / '.github/build-patches/system-dlkm-name.patch',
+           tree / '.github/build-patches/recovery-launch-properties.patch']
+patch_args = list(map(str, patches))
+subprocess.run(['git', '-C', str(build), 'apply', '--check', *patch_args], check=True)
+subprocess.run(['git', '-C', str(build), 'apply', *patch_args], check=True)
 assert config.read_bytes() == patched.encode()
 print('Build compatibility: system_dlkm accepted; seven stock partitions preserved; invalid names still rejected')
+
+subprocess.run([sys.executable, str(tree / '.github/tests/test-recovery-properties.py'), str(build)], check=True)

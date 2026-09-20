@@ -26,9 +26,9 @@ BOARD_SHIPPING_API_LEVEL := 35
 ifeq ($(PLATFORM_SDK_VERSION),32)
 # fox_12.1 builds a standalone recovery, not the stock Android 15 product.
 # Do not request an unavailable vendor Java System SDK or forge its version.
-# Preserve the actual device launch API in recovery's merged prop.default.
+# Actual launch properties are added only to recovery prop.default in BoardConfig.
+BOARD_SHIPPING_API_LEVEL :=
 PRODUCT_SHIPPING_API_LEVEL :=
-PRODUCT_VENDOR_PROPERTIES += ro.product.first_api_level=35
 else
 PRODUCT_SHIPPING_API_LEVEL := 35
 endif

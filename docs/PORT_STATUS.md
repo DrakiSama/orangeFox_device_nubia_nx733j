@@ -113,10 +113,10 @@ El primer build de GitHub Actions confirmó el error de `config.mk:741` guardado
 posterior de repositorio/producto ausente era una consecuencia del fallo de dumpvars.
 
 La revisión del source mostró que ese contrato corresponde al producto Android completo.
-En SDK 32, este producto de recovery deja PRODUCT_SHIPPING_API_LEVEL sin declarar y añade
-explícitamente `ro.product.first_api_level=35` a PRODUCT_VENDOR_PROPERTIES. Se conserva
-BOARD_SHIPPING_API_LEVEL=35, que main.mk convierte en `ro.board.first_api_level=35`.
-El Makefile de recovery concatena las propiedades vendor en prop.default. El validador
+En SDK 32, este producto de recovery deja PRODUCT_SHIPPING_API_LEVEL y BOARD_SHIPPING_API_LEVEL
+sin declarar para las propiedades intermedias de sistema/vendor. BoardConfig añade exclusivamente
+al prop.default de recovery `ro.product.first_api_level=35` y `ro.board.first_api_level=35`
+mediante TARGET_RECOVERY_ADDITIONAL_PROPERTIES y una extensión acotada de la receta recovery. El validador
 ahora exige ambos valores 35 en el ramdisk final y rechaza ausencias o valores contradictorios.
 Para plataformas distintas de SDK 32, se mantiene la declaración PRODUCT_SHIPPING_API_LEVEL=35.
 No se modifica System SDK, crypto, FBE, particiones ni el firmware del teléfono.
@@ -165,6 +165,20 @@ otra vez, produciendo una macro C++ inválida. Se conserva la misma lista sin co
 adicionales en Make. Los demás valores entre comillas usan reglas diferentes y no se
 modificaron indiscriminadamente. La caché del compilador ahora se guarda también tras
 un build fallido, con claves únicas por intento, para reutilizar objetos ya compilados.
+
+## Validación GRF y propiedades exclusivas de recovery
+
+Actions `35540480808` compiló el código hasta el empaquetado, pero post_process_props rechazó
+ro.board.first_api_level=35 dentro de vendor/build.prop SDK 32. La separación anterior sólo
+cubría el contrato de producto y era incompleta. Ahora ambas propiedades reales de lanzamiento
+se añaden en la receta que construye exclusivamente recovery/prop.default, después de las
+propiedades intermedias validadas; no se altera ni desactiva post_process_props.
+El parche de Makefile admite únicamente hashes revisados del source base y del sync oficial.
+
+La prueba usa el post_process_props.py real para verificar que el vendor incompatible sigue
+siendo rechazado, y ejecuta la receta Make para comprobar que las propiedades 35 aparecen en
+recovery sin falsear ro.vendor.build.version.sdk. El verificador final sigue exigiendo ambos
+valores 35 en el ramdisk extraído de la imagen. No se genera ni publica una imagen vendor.
 
 ## Límites y riesgos conocidos
 
