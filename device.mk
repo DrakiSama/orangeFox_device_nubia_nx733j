@@ -10,7 +10,10 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/base.mk)
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
 
-$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/compression_with_xor.mk)
+# Android 12.1 has compression.mk; newer compression_with_xor.mk only adds
+# this property. Preserve the device declaration without inventing a dependency.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/compression.mk)
+PRODUCT_VENDOR_PROPERTIES += ro.virtual_ab.compression.xor.enabled=true
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
@@ -51,7 +54,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/system/etc/vintf/manifest/nx733j-hals.xml:$(TARGET_COPY_OUT_RECOVERY)/root/system/etc/vintf/manifest/nx733j-hals.xml
 
-# Hardware initialization validated on NX733J in recovery RAM (ADSP para batería).
+# Hardware initialization validated on NX733J in recovery RAM (ADSP para baterÃ­a).
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/vendor/bin/init_nx733j_hardware.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/init_nx733j_hardware.sh \
     $(DEVICE_PATH)/recovery/root/vendor/firmware/haptic_ram.bin:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/firmware/haptic_ram.bin

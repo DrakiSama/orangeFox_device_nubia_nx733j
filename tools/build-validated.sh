@@ -31,7 +31,13 @@ mkdir -p "$CCACHE_DIR"
 ccache -M 10G
 ccache -o compression=true
 printf 'TW_DEVICE_VERSION := by Draki %s\n' "${revision:0:12}" > "$device/build-version.mk"
+# The official envsetup ends with an optional [ -s ... ] && command,
+# which returns 1 when its optional file is absent. It is not errexit-safe.
+set +e
 source build/envsetup.sh
+set -e
+declare -F lunch m >/dev/null
+[[ "${NOT_ORANGEFOX:-}" != 1 ]]
 source "$device/vendorsetup.sh"
 lunch ofrp_NX733J-eng
 # Record only explicitly declared device flags; never export runner secrets.
