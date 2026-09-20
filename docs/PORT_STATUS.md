@@ -157,6 +157,15 @@ libext2_uuid en static_libs. El parche de flasheo lógico ahora enlaza ambas est
 libsparse permanece compartida. No se eliminó libdm ni se alteraron los controles del writer.
 La confirmación de enlace final corresponde al siguiente build remoto, no a los tests simulados.
 
+## Macro de quick backup y caché
+
+Actions `35535735469` alcanzó la compilación de recovery y falló en twrp-functions.cpp:
+el valor OF_QUICK_BACKUP_LIST tenía comillas en BoardConfig y orangefox.mk lo envolvía
+otra vez, produciendo una macro C++ inválida. Se conserva la misma lista sin comillas
+adicionales en Make. Los demás valores entre comillas usan reglas diferentes y no se
+modificaron indiscriminadamente. La caché del compilador ahora se guarda también tras
+un build fallido, con claves únicas por intento, para reutilizar objetos ya compilados.
+
 ## Límites y riesgos conocidos
 
 - FBE con PIN, batería y haptics tienen evidencia del TWRP de referencia, no de este nuevo OrangeFox.

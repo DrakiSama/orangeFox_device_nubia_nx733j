@@ -62,12 +62,16 @@ jobs:
             git -C "$FOX_ROOT/$project" fetch origin "$pin"
             git -C "$FOX_ROOT/$project" checkout --detach "$pin"
           done
-      - uses: actions/cache@v4
+      - name: Restore compiler cache
+        id: ccache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
         with:
           path: ${{ env.FOX_ROOT }}/out/ccache
-          key: fox12-nx733j-ccache-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}
+          key: fox12-nx733j-ccache-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: fox12-nx733j-ccache-${{ runner.os }}-
       - name: Test, build exact device commit and inspect final ramdisk
+        id: build
         run: |
           set -Ee -o pipefail
           cd "$FOX_ROOT"
@@ -80,3 +84,10 @@ jobs:
           path: build-artifacts/
           if-no-files-found: warn
           retention-days: 14
+      - name: Preserve compiler cache after successful or failed builds
+        if: ${{ !cancelled() && steps.build.outcome != 'skipped' }}
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.FOX_ROOT }}/out/ccache
+          key: ${{ steps.ccache.outputs.cache-primary-key }}

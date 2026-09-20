@@ -218,7 +218,8 @@ OF_SKIP_FBE_DECRYPTION := 0
 OF_NO_TREBLE_COMPATIBILITY_CHECK := 0
 OF_NO_MIUI_OTA_VENDOR_BACKUP := 1
 OF_DISABLE_MIUI_OTA_BY_DEFAULT := 1
-OF_QUICK_BACKUP_LIST := "/boot;/data;/system;/vendor;"
+# orangefox.mk adds the C++ string quotes. Keep the Make value unquoted.
+OF_QUICK_BACKUP_LIST := /boot;/data;/system;/vendor;
 OF_DISABLE_EXTRA_ABOUT_PAGE := 0
 OF_USE_MAGISKBOOT := 1
 OF_USE_MAGISKBOOT_FOR_ALL_PATCHES := 1
