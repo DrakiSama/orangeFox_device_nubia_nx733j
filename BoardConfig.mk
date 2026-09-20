@@ -182,9 +182,13 @@ TW_EXTRA_LANGUAGES := true
 TW_FONT_SIZE := 20
 TW_EXCLUDE_APEX := true
 TW_HAS_EDL_MODE := true
-TW_NO_HAPTICS := true
+# Direct Awinic sysfs haptics (duration_aw/activate_aw); no vendor vibrator HAL
+# (vendor.qti.vibrator causaba lag táctil en este dispositivo).
+TW_NO_HAPTICS := false
 TW_USE_SERIALNO_PROPERTY_FOR_DEVICE_ID := true
 TW_SCREEN_BLANK_ON_BOOT := true
+# Módulos de vendor requeridos para display, touch y battery (Nubia/ZTE sun platform)
+# Verificados contra kernel source NX733J V(15) y vendor_boot stock
 TW_LOAD_VENDOR_MODULES := "msm.ko drm_display_helper.ko panel_event_notifier.ko dispcc-sun.ko gpucc-sun.ko zte_tpd.ko aw9620x.ko"
 TW_LOAD_VENDOR_MODULES_EXCLUDE_GKI := true
 TW_LOAD_PREBUILT_MODULES_AT_FIRST := true

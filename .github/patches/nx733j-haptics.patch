@@ -1,0 +1,13 @@
+--- a/minuitwrp/events.cpp
++++ b/minuitwrp/events.cpp
+@@ -61,8 +61,8 @@
+ #define VIBRATOR_TIMEOUT_FILE	"/sys/class/timed_output/vibrator/enable"
+ #define VIBRATOR_TIME_MS    50
+ 
+-#define LEDS_HAPTICS_DURATION_FILE	"/sys/class/leds/vibrator/duration"
+-#define LEDS_HAPTICS_ACTIVATE_FILE	"/sys/class/leds/vibrator/activate"
++#define LEDS_HAPTICS_DURATION_FILE	"/sys/class/leds/vibrator/duration_aw"
++#define LEDS_HAPTICS_ACTIVATE_FILE	"/sys/class/leds/vibrator/activate_aw"
+ 
+ #ifndef SYN_REPORT
+ #define SYN_REPORT          0x00
