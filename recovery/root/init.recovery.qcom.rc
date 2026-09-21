@@ -25,9 +25,10 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-on init
-    start vendor.boot-qti
-    setprop prepdecrypt.setpatch true
+on early-init
+    # Limit the SDK-35 NDK alias to audited crypto services.
+    mkdir /vendor/lib64/nx733j-compat 0755 root root
+    symlink /system/lib64/libbinder_ndk.so /vendor/lib64/nx733j-compat/libbinder_ndk-sdk35.so
 
 on early-fs
     write /proc/sys/walt/sched_lib_name "recovery,magiskboot,Updater,updater,update_engine_sideload"

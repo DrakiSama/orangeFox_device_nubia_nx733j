@@ -79,3 +79,13 @@ lectura por slot; modem no es modemst/fsg ni el almacenamiento NV.
 No se incluyen instrucciones de flasheo indiscriminado: seguir el
 [checklist físico](docs/PORT_STATUS.md#primera-prueba-física) después de obtener una imagen verificada.
 No asumir que `fastboot boot` es compatible con esta recovery dedicada sin kernel.
+
+
+### Crypto runtime follow-up (2026-09-21)
+
+ADB tests recovered the metadata key and mounted its userdata mapping read-only
+after fixing Binder NDK compatibility, VINTF schema/ownership and firmware
+version properties. The tree now contains these fixes and a Qualcomm HIDL
+BootControl adapter for the subsequent mount wait. Full build and PIN-based
+CE decryption on the resulting image remain to be validated; see
+[physical diagnosis](docs/FIRST_BOOT_DIAGNOSIS.md).

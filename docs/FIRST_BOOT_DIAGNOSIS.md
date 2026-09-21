@@ -67,3 +67,40 @@ El propietario solicitó volver a system al terminar el diagnóstico. El primer 
 volvió a recovery porque BCB conservaba boot-recovery. Se respaldaron localmente 2048 bytes
 del mensaje y se pusieron a cero sólo los primeros 32 bytes (campo command), verificando
 que los otros 2016 no cambiaron, antes de repetir reboot system. No se cambiaron slots.
+
+
+## 2026-09-21: physical crypto diagnosis and RAM validation
+
+The bounded-keystore build reaches the menu. The remaining blockers were
+verified over ADB with the user's phone running that build:
+
+* SDK-35 libbinder_ndk requires six C++ Binder symbols absent from SDK 32.
+  KeyMint and its interface libraries only import NDK APIs exported by SDK 32.
+  Aliasing the SDK-35 soname to the platform NDK library in RAM allowed KeyMint
+  to register. The permanent alias is scoped to audited crypto services;
+  health uses a newer death-recipient API and must not use this alias.
+* libvintf supports manifest schema 4.0; supplied schemas 8.0/9.0 prevented
+  service discovery. Normalizing only the schema version preserves HAL versions.
+  The device fragment under system was also invalid: system is framework-owned.
+  Remove that duplicate; vendor fragments already declare these services.
+* After these changes, KeyMint shared-secret negotiation succeeded and
+  Keystore 2.0 registered successfully. No PIN was provided to the agent.
+* Installed system reports Android 16, system patch 2026-02-01, vendor patch
+  2025-12-01. Runtime recovery reported Android 15 and patches 2099-12-31.
+  Reading the installed properties from separate read-only EROFS mounts and
+  configuring them before KeyMint allowed retrieval of the metadata key.
+  The generated userdata mapping mounted successfully read-only in a separate
+  temporary directory. No personal files were inspected.
+* Recovery then waits for HIDL BootControl 1.0/1.1. The stock AIDL service alone
+  cannot satisfy the Android 12.1 client; generic HIDL service lacks its backend.
+  Generic AOSP boot_control is unsuitable: its misc slot metadata CRC/magic is
+  not present on this Qualcomm device. Add the official Qualcomm HIDL adapter
+  linked to the existing libboot_control_qti.so; preserve the Qualcomm backend.
+
+The startup wrapper obtains properties dynamically from the active slot, waits
+at most 30 seconds for logical devices, mounts only read-only, validates values,
+and fails closed rather than configuring KeyMint with fabricated versions.
+The HIDL adapter still requires the full Actions build and physical validation.
+Metadata-key recovery is confirmed; PIN-protected CE decryption is not yet
+confirmed. ssgtzd/libssl and AIDL health compatibility remain separate issues.
+Raw logs and device identifiers remain local and are not committed.

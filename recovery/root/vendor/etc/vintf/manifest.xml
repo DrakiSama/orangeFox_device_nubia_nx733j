@@ -1,40 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<manifest version="2.0" type="device" target-level="8">
-
-    <!-- KeyMint TEE (decrypt FBE/ICE) -->
-    <hal format="aidl">
-        <name>android.hardware.security.keymint</name>
-        <fqname>IKeyMintDevice/default</fqname>
-    </hal>
-
-    <!-- KeyMint Strongbox -->
-    <hal format="aidl">
-        <name>android.hardware.security.keymint</name>
-        <fqname>IKeyMintDevice/strongbox</fqname>
-    </hal>
-
-    <!-- Gatekeeper -->
+<manifest version="4.0" type="device" target-level="8">
+    <!-- Other HALs are declared once in vendor/etc/vintf/manifest/. -->
     <hal format="aidl">
         <name>android.hardware.gatekeeper</name>
+        <version>1</version>
         <fqname>IGatekeeper/default</fqname>
     </hal>
-
-    <!-- Weaver (derivación de claves con wrappedkey) -->
-    <hal format="aidl">
-        <name>android.hardware.weaver</name>
-        <fqname>IWeaver/default</fqname>
-    </hal>
-
-    <!-- Health (battery capacity, charging) -->
-    <hal format="aidl">
-        <name>android.hardware.health</name>
-        <fqname>IHealth/default</fqname>
-    </hal>
-
-    <!-- Boot control (A/B slot switching) -->
-    <hal format="aidl">
-        <name>android.hardware.boot</name>
-        <fqname>IBootControl/default</fqname>
-    </hal>
-
 </manifest>

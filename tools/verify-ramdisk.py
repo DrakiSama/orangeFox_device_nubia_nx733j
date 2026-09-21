@@ -36,14 +36,20 @@ def resolve(name):
     return path
 
 for name in ['sbin/init_nx733j_hardware.sh', 'sbin/init_nx733j_cpu.sh',
-             'sbin/nx733j-diagnose.sh', 'sbin/mount_vendor_dlkm.sh',
+             'sbin/nx733j-diagnose.sh', 'sbin/mount_vendor_dlkm.sh', 'sbin/nx733j-keymint.sh',
+             'system/lib64/hw/android.hardware.boot@1.0-impl-1.2-qti.so',
              'init.recovery.qcom.rc', 'init.recovery.usb.rc', 'system/etc/recovery.fstab',
              'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin',
-             'system/etc/vintf/manifest/nx733j-hals.xml', 'vendor/etc/vintf/manifest.xml']:
+             'system/etc/vintf/manifest.xml', 'vendor/etc/vintf/manifest.xml']:
     resolve(name)
 for path in root.rglob('*'):
     if path.is_symlink() or not path.is_file(): continue
-    if path.suffix == '.xml' and 'vintf' in path.parts: ET.parse(path)
+    if path.suffix == '.xml' and 'vintf' in path.parts:
+        xml = ET.parse(path).getroot()
+        if xml.tag == 'manifest':
+            assert float(xml.attrib['version']) <= 4.0, path
+            expected = 'framework' if 'system' in path.relative_to(root).parts else 'device'
+            assert xml.attrib.get('type') == expected, path
     with path.open('rb') as stream:
         first = stream.readline(4096)
     if first.startswith(b'#!'):

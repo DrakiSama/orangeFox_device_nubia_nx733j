@@ -7,3 +7,27 @@
 soong_namespace {
     imports: [],
 }
+
+cc_prebuilt_library_shared {
+    name: "libboot_control_qti_nx733j",
+    stem: "libboot_control_qti",
+    srcs: ["recovery/root/vendor/lib64/libboot_control_qti.so"],
+    compile_multilib: "64",
+    recovery_available: true,
+    strip: { none: true },
+    check_elf_files: false,
+}
+cc_library_shared {
+    name: "nx733j_bootctrl",
+    stem: "android.hardware.boot@1.0-impl-1.2-qti",
+    defaults: ["hidl_defaults"],
+    relative_install_path: "hw",
+    recovery_available: true,
+    compile_multilib: "64",
+    srcs: ["bootctrl/BootControl.cpp"],
+    local_include_dirs: ["bootctrl"],
+    shared_libs: [
+        "libboot_control_qti_nx733j", "liblog", "libhidlbase", "libhardware", "libutils",
+        "android.hardware.boot@1.0", "android.hardware.boot@1.1", "android.hardware.boot@1.2",
+    ],
+}

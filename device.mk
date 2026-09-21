@@ -60,9 +60,6 @@ PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/init.recovery.usb.rc:$(TARGET_COPY_OUT_RECOVERY)/root/init.recovery.usb.rc \
     $(DEVICE_PATH)/recovery/root/vendor/bin/mount_vendor_dlkm.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/mount_vendor_dlkm.sh
 
-# Recovery servicemanager reads HAL declarations from system/etc/vintf.
-PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/recovery/root/system/etc/vintf/manifest/nx733j-hals.xml:$(TARGET_COPY_OUT_RECOVERY)/root/system/etc/vintf/manifest/nx733j-hals.xml
 
 # Hardware initialization validated on NX733J in recovery RAM (ADSP para batería).
 PRODUCT_COPY_FILES += \
@@ -76,3 +73,8 @@ PRODUCT_COPY_FILES += \
 # Independent bounded CPU sensor discovery; does not wait for ADSP.
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/vendor/bin/init_nx733j_cpu.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/init_nx733j_cpu.sh
+
+# HIDL bridge uses the shipped Qualcomm backend, not generic misc slot metadata.
+PRODUCT_PACKAGES += nx733j_bootctrl.recovery
+PRODUCT_COPY_FILES += \
+    $(DEVICE_PATH)/recovery/root/vendor/bin/nx733j-keymint.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/nx733j-keymint.sh

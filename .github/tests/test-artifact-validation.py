@@ -19,14 +19,16 @@ with tempfile.TemporaryDirectory() as temp:
     source = tree/'recovery/root'
     for name in ['init.recovery.qcom.rc', 'init.recovery.usb.rc',
                  'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin',
-                 'system/etc/vintf/manifest/nx733j-hals.xml', 'vendor/etc/vintf/manifest.xml']:
+                 'system/etc/vintf/manifest.xml', 'vendor/etc/vintf/manifest.xml']:
         path = root/name
         path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source/name, path)
     (root/'sbin').mkdir()
-    for name in ['init_nx733j_hardware.sh', 'init_nx733j_cpu.sh', 'nx733j-diagnose.sh', 'mount_vendor_dlkm.sh']:
+    for name in ['init_nx733j_hardware.sh', 'init_nx733j_cpu.sh', 'nx733j-diagnose.sh', 'mount_vendor_dlkm.sh', 'nx733j-keymint.sh']:
         shutil.copyfile(source/'vendor/bin'/name, root/'sbin'/name)
     shutil.copyfile(tree/'recovery.fstab', root/'system/etc/recovery.fstab')
+    (root/'system/lib64/hw').mkdir(parents=True)
+    (root/'system/lib64/hw/android.hardware.boot@1.0-impl-1.2-qti.so').write_bytes(b'\x7fELF-test-only')
     (root/'system/bin').mkdir()
     shell = root/'system/bin/mksh'
     shell.write_bytes(b'\x7fELF-test-only')
@@ -34,6 +36,13 @@ with tempfile.TemporaryDirectory() as temp:
     props = root/'prop.default'
     props.write_text('ro.product.first_api_level=35\nro.board.first_api_level=35\n')
     run('verify-ramdisk.py', root)
+    manifest = root/'system/etc/vintf/manifest.xml'
+    valid_manifest = manifest.read_text()
+    manifest.write_text('<manifest version="9.0" type="framework"/>')
+    run('verify-ramdisk.py', root, success=False)
+    manifest.write_text('<manifest version="4.0" type="device"/>')
+    run('verify-ramdisk.py', root, success=False)
+    manifest.write_text(valid_manifest)
     props.write_text('ro.product.first_api_level=32\nro.board.first_api_level=35\n')
     run('verify-ramdisk.py', root, success=False)
     props.write_text('ro.product.first_api_level=35\nro.board.first_api_level=35\n')
