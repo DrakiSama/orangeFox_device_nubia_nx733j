@@ -5,6 +5,10 @@ import subprocess
 import sys
 import tempfile
 vold = Path(sys.argv[1])
+tree = Path(__file__).resolve().parents[2]
+assert not list((tree/'.github/vold-support').rglob('Android.bp')), 'Support templates must not declare duplicate Soong modules'
+assert (vold/'nx733j/gatekeeper/Android.bp').is_file()
+assert not (vold/'nx733j/gatekeeper/Android.bp.in').exists()
 s = (vold/'nx733j/GatekeeperAidl.h').read_text()
 helper = s.split('// BEGIN NX733J AIDL verification')[1].split('// END NX733J AIDL verification')[0]
 decrypt = (vold/'Decrypt.cpp').read_text()

@@ -8,3 +8,7 @@ The helper only verifies the supplied credential and forwards the returned HAT t
 KeystoreAuthorization. It never enrolls, deletes users or changes credentials.
 Select AIDL only when declared in VINTF; preserve the existing HIDL path otherwise.
 Failures and retry timeouts must stop the attempt without forwarding a token.
+
+Android.bp.in is deliberately inactive in the device tree. The patch installer
+renames it to Android.bp only in system/vold/nx733j/gatekeeper, so Soong sees one
+Gatekeeper interface module instead of scanning both the template and its copy.

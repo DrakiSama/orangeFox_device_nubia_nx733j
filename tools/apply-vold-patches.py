@@ -27,4 +27,6 @@ for name, digest, patch, test in changes:
     if test:
         subprocess.run([sys.executable, str(tree/'.github/tests'/test), str(vold/name)], check=True)
 shutil.copytree(tree/'.github/vold-support', vold/'nx733j')
+# Keep the template invisible to Soong while it lives in the device tree.
+(vold/'nx733j/gatekeeper/Android.bp.in').rename(vold/'nx733j/gatekeeper/Android.bp')
 subprocess.run([sys.executable, str(tree/'.github/tests/test-gatekeeper-aidl.py'), str(vold)], check=True)
