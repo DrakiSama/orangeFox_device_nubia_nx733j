@@ -13,13 +13,14 @@ revision=$(git -C "$tree" rev-parse HEAD)
 git -C "$tree" archive "$revision" | tar -x -C device/nubia/NX733J
 device=$root/device/nubia/NX733J
 python3 "$device/tools/apply-build-patches.py" "$root/build/make" | tee "$artifacts/build-compat.log"
+python3 "$device/tools/apply-vold-patches.py" "$root/system/vold" | tee "$artifacts/keystore-startup-test.log"
 python3 "$device/tools/apply-recovery-patches.py" "$root/bootable/recovery"
 python3 "$device/tools/validate-port.py" "$root/bootable/recovery" | tee "$artifacts/tests.log"
 python3 "$device/.github/tests/test-artifact-validation.py" "$device" "$root" | tee "$artifacts/boot-image-tools-test.log"
 repo manifest -r -o "$artifacts/manifest.xml"
 {
     printf 'device_tree=%s\n' "$revision"
-    for project in bootable/recovery vendor/recovery vendor/twrp build/make system/update_engine; do
+    for project in bootable/recovery vendor/recovery vendor/twrp build/make system/update_engine system/vold; do
         printf '%s=%s\n' "$project" "$(git -C "$project" rev-parse HEAD)"
         git -C "$project" diff --binary > "$artifacts/${project//\//-}.patch"
     done

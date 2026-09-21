@@ -48,3 +48,22 @@ infinita de keystore para poder mostrar un error útil, sin anunciar descifrado 
 No basta con cambiar la versión del XML, omitir las validaciones o copiar libbinder de stock:
 son contratos de ABI y servicios que deben integrarse y probarse conjuntamente.
 No se lanzó otro build, porque el diagnóstico no aporta todavía una solución de runtime validada.
+
+## Corrección de la espera y salida a system
+
+Se sustituyó AServiceManager_waitForService en el constructor de Keymaster por hasta
+40 comprobaciones no bloqueantes de registro, separadas por 250 ms. Si no aparece el
+servicio, el constructor conserva securityLevel vacío y los callers de KeyStorage
+rechazan la operación. No se crean claves alternativas, se formatea data ni se desactiva FBE.
+Se permiten reintentos posteriores; la ausencia inicial no queda almacenada permanentemente.
+Las llamadas Binder posteriores a un servicio ya registrado no tienen un timeout nuevo.
+
+Esto corrige la espera infinita observada, pero no resuelve ni acredita todavía la
+compatibilidad de los blobs SDK35 con Binder/libvintf de Android 12.1. El arranque completo
+y el descifrado requieren validación física de un nuevo build y trabajo de runtime adicional.
+El parche se aplica al source vold fijado y se registra su diff en los artefactos del build.
+
+El propietario solicitó volver a system al terminar el diagnóstico. El primer reboot
+volvió a recovery porque BCB conservaba boot-recovery. Se respaldaron localmente 2048 bytes
+del mensaje y se pusieron a cero sólo los primeros 32 bytes (campo command), verificando
+que los otros 2016 no cambiaron, antes de repetir reboot system. No se cambiaron slots.

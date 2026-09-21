@@ -42,3 +42,12 @@ jobs:
           git -C "$tools_dir" fetch --depth=1 origin "$(cat .github/mkbootimg-revision)"
           git -C "$tools_dir" checkout --detach FETCH_HEAD
           python3 .github/tests/test-artifact-validation.py "$GITHUB_WORKSPACE" "$tools_root"
+      - name: Check bounded recovery keystore startup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init "$RUNNER_TEMP/fox-vold"
+          git -C "$RUNNER_TEMP/fox-vold" remote add origin https://github.com/TeamWin/android_system_vold.git
+          git -C "$RUNNER_TEMP/fox-vold" fetch --depth=1 origin "$(cat .github/vold-revision)"
+          git -C "$RUNNER_TEMP/fox-vold" checkout --detach FETCH_HEAD
+          python3 tools/apply-vold-patches.py "$RUNNER_TEMP/fox-vold"

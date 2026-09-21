@@ -20,3 +20,5 @@ security/** -text
 *.yml text eol=lf
 
 .github/build-patches/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab
+
+.github/vold-patches/*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab
