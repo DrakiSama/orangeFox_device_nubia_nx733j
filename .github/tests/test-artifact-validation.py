@@ -18,11 +18,15 @@ with tempfile.TemporaryDirectory() as temp:
     root = temp/'root'
     source = tree/'recovery/root'
     for name in ['init.recovery.qcom.rc', 'init.recovery.usb.rc',
-                 'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin', 'vendor/etc/init/nx733j.bootctrl.rc',
+                 'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin',
                  'system/etc/vintf/manifest.xml', 'vendor/etc/vintf/manifest.xml']:
         path = root/name
         path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source/name, path)
+    boot_rc = root/'system/etc/init/android.hardware.boot@1.2-service.rc'
+    boot_rc.parent.mkdir(parents=True, exist_ok=True)
+    boot_rc.write_text('service boot-hal-1-2 /system/bin/android.hardware.boot@1.2-service\n'
+                       '    setenv LD_PRELOAD /vendor/lib64/libcxx.so:/vendor/lib64/libbase-sdk35.so\n')
     (root/'sbin').mkdir()
     for name in ['init_nx733j_hardware.sh', 'init_nx733j_cpu.sh', 'nx733j-diagnose.sh', 'mount_vendor_dlkm.sh', 'nx733j-keymint.sh']:
         shutil.copyfile(source/'vendor/bin'/name, root/'sbin'/name)
@@ -37,6 +41,11 @@ with tempfile.TemporaryDirectory() as temp:
     props.write_text('ro.product.first_api_level=35\nro.board.first_api_level=35\n')
     run('verify-ramdisk.py', root)
     manifest = root/'system/etc/vintf/manifest.xml'
+    duplicate = root/'vendor/etc/init/duplicate-boot.rc'
+    duplicate.parent.mkdir(parents=True, exist_ok=True)
+    duplicate.write_text(boot_rc.read_text() + '    override\n')
+    run('verify-ramdisk.py', root, success=False)
+    duplicate.unlink()
     valid_manifest = manifest.read_text()
     manifest.write_text('<manifest version="9.0" type="framework"/>')
     run('verify-ramdisk.py', root, success=False)

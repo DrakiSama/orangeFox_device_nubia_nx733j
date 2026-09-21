@@ -15,6 +15,7 @@ jobs = [
     ('test-logical-image.py', source / 'partition.cpp'),
     ('test-flags-parser.py', source / 'partitionmanager.cpp'),
     ('test-device-tree.py', tree),
+    ('test-bootctrl-init.py', source/'etc/init/android.hardware.boot@1.2-service.rc'),
     ('test-crypto-startup.py', tree),
     ('test-artifact-validation.py', tree),
 ]
@@ -25,4 +26,4 @@ for name, arg in jobs:
         failed.append(name)
 if failed:
     sys.exit('FAILED: ' + ', '.join(failed))
-print('\nAll nine test suites passed. Hardware and full Android build are separate validations.')
+print('\nAll ten test suites passed. Hardware and full Android build are separate validations.')

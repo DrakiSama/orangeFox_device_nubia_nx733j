@@ -2,6 +2,7 @@
 """Apply reviewed recovery keystore startup and provisioning-keyring fixes."""
 from pathlib import Path
 import hashlib
+import shutil
 import subprocess
 import sys
 
@@ -10,7 +11,11 @@ vold = Path(sys.argv[1]).resolve()
 changes = [
     ('Keymaster.cpp', 'vold-keymaster-sha256', 'bounded-keystore-startup.patch', 'test-keystore-startup.py'),
     ('KeyUtil.cpp', 'vold-keyutil-sha256', 'recovery-fscrypt-keyring.patch', 'test-fscrypt-keyring.py'),
+    ('Decrypt.cpp', 'vold-decrypt-sha256', 'gatekeeper-aidl-decrypt.patch', None),
+    ('Android.bp', 'vold-android-bp-sha256', 'gatekeeper-aidl-build.patch', None),
 ]
+if (vold/'nx733j').exists():
+    sys.exit('vold/nx733j already exists; use a clean checkout')
 # Validate all source hashes and patches before mutating either file.
 for name, digest, patch, test in changes:
     expected = (tree/'.github'/digest).read_text().strip()
@@ -19,4 +24,7 @@ for name, digest, patch, test in changes:
     subprocess.run(['git', '-C', str(vold), 'apply', '--check', str(tree/'.github/vold-patches'/patch)], check=True)
 for name, digest, patch, test in changes:
     subprocess.run(['git', '-C', str(vold), 'apply', str(tree/'.github/vold-patches'/patch)], check=True)
-    subprocess.run([sys.executable, str(tree/'.github/tests'/test), str(vold/name)], check=True)
+    if test:
+        subprocess.run([sys.executable, str(tree/'.github/tests'/test), str(vold/name)], check=True)
+shutil.copytree(tree/'.github/vold-support', vold/'nx733j')
+subprocess.run([sys.executable, str(tree/'.github/tests/test-gatekeeper-aidl.py'), str(vold)], check=True)

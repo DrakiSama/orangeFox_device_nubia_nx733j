@@ -6,3 +6,4 @@ image-target-message.patch
 late-cpu-sensor.patch
 cli-result.patch
 nx733j-super-protection.patch
+nx733j-bootctrl-runtime.patch

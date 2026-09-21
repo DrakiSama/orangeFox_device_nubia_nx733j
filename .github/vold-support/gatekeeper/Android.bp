@@ -1,0 +1,14 @@
+// Frozen AOSP Android 14 Gatekeeper v1 client, for Android 12.1 recovery.
+aidl_interface {
+    name: "android.hardware.gatekeeper",
+    srcs: ["android/hardware/gatekeeper/*.aidl"],
+    local_include_dir: ".",
+    imports: ["android.hardware.security.keymint-V1"],
+    stability: "vintf",
+    versions: ["1"],
+    backend: {
+        java: { enabled: false },
+        cpp: { enabled: false },
+        ndk: { apps_enabled: false },
+    },
+}

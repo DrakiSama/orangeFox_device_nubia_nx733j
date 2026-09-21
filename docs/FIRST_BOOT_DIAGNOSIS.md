@@ -129,3 +129,27 @@ ENOKEY, reuses an existing one, and preserves permission/creation failures.
 It does not erase or replace stored key blobs or alter encryption flags.
 Actual FBE/CE decryption with this patch still requires the next compiled image.
 A compiled helper test covers existing, missing, reuse and error cases in CI.
+
+
+## Follow-up: 753b2b9 init rejection and Gatekeeper AIDL
+
+Physical boot logs showed init rejecting the vendor override of boot-hal-1-2:
+"overrides another service across the treble boundary", plus duplicate HIDL
+interface declarations. The original service remained active without LD_PRELOAD.
+Replace the override with a patch to OrangeFox's original platform init file.
+Validation now inspects that actual file and rejects duplicate boot service
+entries in the unpacked image.
+
+Starting BootControl manually with its required libraries unblocked recovery.
+The compiled keyring fix worked: systemwide keys, fscrypt-provisioning keys and
+user DE keys loaded, /data mounted, and OrangeFox displayed decrypt_pin.
+The user entered the PIN on the device; three attempts failed before verification
+because Decrypt.cpp requested HIDL Gatekeeper while the device only provides AIDL.
+
+The new vold path selects Gatekeeper AIDL when declared by VINTF, uses frozen
+AOSP v1 definitions and forwards the returned structured HardwareAuthToken to
+KeystoreAuthorization. It preserves the previous HIDL path for other devices.
+It does not enroll/delete users, modify credentials or log supplied credentials.
+Rejection, retry timeout, missing services, malformed token and authorization
+failure stop the attempt. Successful PIN/CE unlock remains unconfirmed until
+this newly compiled client is tested physically.

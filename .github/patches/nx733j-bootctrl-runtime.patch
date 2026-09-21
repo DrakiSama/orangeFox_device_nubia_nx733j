@@ -1,0 +1,9 @@
+--- a/etc/init/android.hardware.boot@1.2-service.rc
++++ b/etc/init/android.hardware.boot@1.2-service.rc
+@@ -5,5 +5,6 @@
+     user root
+     group root
+     setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib:/sbin
++    setenv LD_PRELOAD /vendor/lib64/libcxx.so:/vendor/lib64/libbase-sdk35.so
+     disabled
+     seclabel u:r:recovery:s0

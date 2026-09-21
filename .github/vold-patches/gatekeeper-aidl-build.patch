@@ -1,0 +1,10 @@
+--- a/Android.bp
++++ b/Android.bp
+@@ -174,6 +174,7 @@
+     shared_libs: [
+         "android.hardware.confirmationui@1.0",
+         "android.hardware.gatekeeper@1.0",
++        "android.hardware.gatekeeper-V1-ndk_platform",
+         "android.hardware.health.storage@1.0",
+         "android.hardware.health.storage-V1-ndk_platform",
+         "android.hardware.keymaster@4.1",

@@ -1,0 +1,30 @@
+--- a/Decrypt.cpp
++++ b/Decrypt.cpp
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include "Decrypt.h"
++#include "nx733j/GatekeeperAidl.h"
+ #include "FsCrypt.h"
+ #include <fscrypt/fscrypt.h>
+ 
+@@ -748,7 +749,18 @@
+ 		}
+ 		memcpy((void*)&application_id[0], (void*)&password_token[0], PASSWORD_TOKEN_SIZE);
+ 		memcpy((void*)&application_id[PASSWORD_TOKEN_SIZE], secdiscardable, SHA512_DIGEST_LENGTH);
+-		if (Password != "!") {
++		if (Password != "!" && AServiceManager_isDeclared("android.hardware.gatekeeper.IGatekeeper/default")) {
++            if (pwd.handle_len <= 0) return Free_Return(retval, weaver_key, &pwd);
++            void* derived = PersonalizedHashBinary(PERSONALIZATION_USER_GK_AUTH,
++                                                   (char*)&password_token[0], PASSWORD_TOKEN_SIZE);
++            if (!derived) return Free_Return(retval, weaver_key, &pwd);
++            std::vector<uint8_t> handle((uint8_t*)pwd.password_handle,
++                                        (uint8_t*)pwd.password_handle + pwd.handle_len);
++            std::vector<uint8_t> credential((uint8_t*)derived, (uint8_t*)derived + SHA512_DIGEST_LENGTH);
++            free(derived);
++            if (!VerifyGatekeeperAidl(fakeUid(user_id), handle, credential))
++                return Free_Return(retval, weaver_key, &pwd);
++        } else if (Password != "!") {
+ 			int ret = -1;
+ 			bool request_reenroll = false;
+ 			android::sp<android::hardware::gatekeeper::V1_0::IGatekeeper> gk_device;

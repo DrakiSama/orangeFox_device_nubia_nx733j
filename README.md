@@ -55,6 +55,17 @@ validación de FBE con este último cambio requiere una nueva imagen.
 El [build anterior que llega al menú](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35552798531)
 corresponde a `72b1525` y todavía presenta los fallos de descifrado diagnosticados.
 
+### Seguimiento de la prueba con `753b2b9`
+
+La creación del keyring ya se comprobó en el teléfono: cargan las claves DE y
+aparece la pantalla del PIN al desbloquear BootControl. El bloqueo del logo se
+debía a que init rechazaba el reemplazo del servicio desde vendor; ahora se
+parchea su definición original en system.
+
+Los intentos de PIN detectaron otra incompatibilidad: el cliente esperaba
+Gatekeeper HIDL y el dispositivo ofrece AIDL. Se agregó esa ruta de verificación;
+el desbloqueo CE sigue pendiente de prueba con la nueva imagen.
+
 ## Generar con GitHub Actions
 
 Abrir **Actions → OrangeFox NX733J - GitHub hosted → Run workflow → main**.
