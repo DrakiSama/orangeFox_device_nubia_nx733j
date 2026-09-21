@@ -7,8 +7,8 @@ Producto: `ofrp_NX733J`. Rama publicada: `main`.
 
 - 🟡 Particiones EROFS, FBE v2, batería/ADSP, haptics Awinic, CPU tardía y diagnóstico integrados.
 - ✅ Pruebas de código y runtime simulado: consultar [resultados](docs/validation-results.txt).
-- 🟡 Compilación completa y staging del ramdisk aprobados en Actions `35542984116`. Corregida la ruta del desempaquetador; falta completar la validación de la imagen final.
-- 🟡 Validación física de este port: pendiente en NX733J.
+- ✅ Build e inspección de imagen completados en Actions `35546442876`, commit `e2eebfa`.
+- ❌ Primera prueba física: detenido en splash esperando keystore2; incompatibilidades Binder/KeyMint y VINTF. [Diagnóstico ADB](docs/FIRST_BOOT_DIAGNOSIS.md).
 - ⚠️ Flasheo IMG lógico: experimental, limitado a asignaciones existentes y sin OTA/snapshots activos.
 - ❌ WiFi no validado. No se anuncia compatibilidad de OTG hasta descartar identificación errónea de UFS.
 
