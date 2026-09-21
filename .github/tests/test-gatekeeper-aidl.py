@@ -9,18 +9,26 @@ tree = Path(__file__).resolve().parents[2]
 assert not list((tree/'.github/vold-support').rglob('Android.bp')), 'Support templates must not declare duplicate Soong modules'
 assert (vold/'nx733j/gatekeeper/Android.bp').is_file()
 assert not (vold/'nx733j/gatekeeper/Android.bp.in').exists()
-s = (vold/'nx733j/GatekeeperAidl.h').read_text()
+s = (vold/'nx733j/GatekeeperAidl.cpp').read_text()
+header = (vold/'nx733j/GatekeeperAidl.h').read_text()
+assert '#include <aidl/' not in header and '#include <log/' not in header
+assert '"nx733j/GatekeeperAidl.cpp"' in (vold/'Android.bp').read_text()
 helper = s.split('// BEGIN NX733J AIDL verification')[1].split('// END NX733J AIDL verification')[0]
 decrypt = (vold/'Decrypt.cpp').read_text()
 assert 'AServiceManager_isDeclared("android.hardware.gatekeeper.IGatekeeper/default")' in decrypt
 assert 'VerifyGatekeeperAidl(fakeUid(user_id), handle, credential)' in decrypt
 assert '::android::hardware::gatekeeper::V1_0::IGatekeeper::getService()' in decrypt
-harness = r"""
+harness = '#include "' + (vold/'nx733j/GatekeeperAidl.h').resolve().as_posix() + '"\n' + r"""
 #include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
+namespace chrome_header_probe {
+constexpr int LOG_INFO = 0;
+constexpr int LOG_WARNING = 1;
+static_assert(LOG_INFO == 0 && LOG_WARNING == 1);
+}
 #define ALOGE(...) ((void)0)
 struct Status { bool ok; bool isOk() const { return ok; } };
 struct Token { std::vector<uint8_t> mac; int64_t userId=567, challenge=0; };

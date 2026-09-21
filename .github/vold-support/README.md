@@ -12,3 +12,7 @@ Failures and retry timeouts must stop the attempt without forwarding a token.
 Android.bp.in is deliberately inactive in the device tree. The patch installer
 renames it to Android.bp only in system/vold/nx733j/gatekeeper, so Soong sees one
 Gatekeeper interface module instead of scanning both the template and its copy.
+
+GatekeeperAidl.cpp owns the Binder and logging dependencies. Its public header
+contains only the verification declaration and standard types, keeping syslog
+macros out of Decrypt.cpp and its libchrome logging headers.
