@@ -1,22 +1,56 @@
-# OrangeFox para Nubia Z70 Ultra — NX733J / PQ84A01
+# OrangeFox Recovery · Nubia Z70 Ultra
 
-Port de los fixes del device tree TWRP `twrp-16.0` sobre **OrangeFox fox_12.1**.
-Producto: `ofrp_NX733J`. Rama publicada: `main`.
+**NX733J / PQ84A01** · Base **fox_12.1** · Producto `ofrp_NX733J` · Rama `main`
 
-## Estado real
+[![Pruebas de regresión](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/port-tests.yml/badge.svg?branch=main)](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/port-tests.yml)
+[![Compilación de recovery](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/build.yml)
 
-- 🟡 Particiones EROFS, FBE v2, batería/ADSP, haptics Awinic, CPU tardía y diagnóstico integrados.
-- ✅ Pruebas de código y runtime simulado: consultar [resultados](docs/validation-results.txt).
-- ✅ Build e inspección de imagen completados en Actions `35546442876`, commit `e2eebfa`.
-- ❌ Primera prueba física: detenido esperando keystore2; añadido polling limitado, pendiente de probar en hardware. Persisten incompatibilidades Binder/KeyMint y VINTF. [Diagnóstico ADB](docs/FIRST_BOOT_DIAGNOSIS.md).
-- ⚠️ Flasheo IMG lógico: experimental, limitado a asignaciones existentes y sin OTA/snapshots activos.
-- ❌ WiFi no validado. No se anuncia compatibilidad de OTG hasta descartar identificación errónea de UFS.
+Port de OrangeFox para el Nubia Z70 Ultra, basado en el device tree TWRP
+`twrp-16.0`, con parches específicos del dispositivo y compilación en GitHub Actions.
+Mantenido por [DrakiSama](https://github.com/DrakiSama).
 
-El README anterior declaraba ADB, MTP, pantalla, touch, fastbootd, FBE y backup funcionales.
-Ese antecedente se conserva; no acredita esos estados en esta revisión. Los resultados de hardware
-TWRP tampoco se convierten automáticamente en resultados OrangeFox.
+**En desarrollo:** OrangeFox ya inicia y permite acceder a la interfaz.
+El descifrado de metadatos funcionó en pruebas por ADB; el desbloqueo completo
+con PIN todavía no está confirmado en una imagen nueva.
 
-[Informe completo, revisiones, inventario y checklist de prueba física](docs/PORT_STATUS.md).
+[Compilaciones y artifacts](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/build.yml)
+· [Diagnóstico en el dispositivo](docs/FIRST_BOOT_DIAGNOSIS.md)
+· [Detalles técnicos del port](docs/PORT_STATUS.md)
+
+## Estado del dispositivo
+
+Estado documentado al **21 de septiembre de 2026**. Las pruebas en RAM y las
+pruebas automáticas se distinguen de la validación de una imagen instalada.
+
+| Componente | Estado comprobado |
+| --- | --- |
+| Arranque e interfaz | El build `72b1525` inicia OrangeFox y llega al menú. |
+| ADB por USB | Confirmado; utilizado para el diagnóstico físico. |
+| KeyMint y Keystore2 | Arranque, registro de servicios y negociación de secretos comprobados con correcciones en RAM. |
+| Cifrado de metadatos | Clave recuperada y volumen descifrado montado en solo lectura durante el diagnóstico. |
+| Datos protegidos con PIN (FBE/CE) | Pendiente de validación en la nueva imagen. |
+| BootControl Qualcomm | Adaptador HIDL integrado en `6a3b8e3`; pendiente de compilación y prueba física. |
+| Batería, temperatura y vibración | Soporte ADSP, detección tardía de CPU y haptics Awinic integrados; validación completa pendiente. |
+| Flasheo de imágenes lógicas | Experimental; limitado a asignaciones existentes, sin OTA ni snapshots activos. |
+| WiFi, OTG, MTP, fastbootd y backup/restauración | No se anuncian como validados en esta revisión de OrangeFox. |
+
+## Últimos avances
+
+La revisión [`6a3b8e3`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/commit/6a3b8e3)
+incorpora las correcciones identificadas por ADB:
+
+- Compatibilidad Binder NDK para los servicios de cifrado.
+- Manifiestos VINTF compatibles con la base Android 12.1 y declaraciones en su ubicación correcta.
+- Lectura de la versión y los parches del firmware instalado antes de iniciar KeyMint,
+  mediante montajes EROFS de solo lectura y usando el slot activo.
+- Adaptador HIDL BootControl sobre la biblioteca Qualcomm del dispositivo.
+
+Las **nueve suites de regresión** de esa revisión
+[pasaron en Actions](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561296423).
+La [compilación de la nueva imagen](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561318301)
+estaba en curso al actualizar esta página; el enlace muestra su estado actual.
+El [build anterior que llega al menú](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35552798531)
+corresponde a `72b1525` y todavía presenta los fallos de descifrado diagnosticados.
 
 ## Generar con GitHub Actions
 
@@ -40,7 +74,9 @@ python3 device-tree/tools/validate-port.py recovery-source
 
 El aplicador rechaza revisiones no revisadas o archivos modificados y comprueba la serie completa antes de aplicarla.
 
-## Build OrangeFox
+<details>
+<summary>Reproducir la compilación manualmente en Linux (avanzado)</summary>
+
 
 Usar el [sincronizador oficial](https://gitlab.com/OrangeFox/sync), según la
 [guía de OrangeFox](https://wiki.orangefox.tech/dev/building), como usuario normal en Linux.
@@ -70,6 +106,8 @@ CI incluye tests automáticos y un build manual exclusivamente GitHub-hosted. Pr
 con límite de recovery de **104857600 bytes**, revisión exacta, SHA-256 y verificación del ramdisk
 final. No crea releases ni flashea el teléfono.
 
+</details>
+
 ## Particiones y primera prueba
 
 Siete particiones lógicas: system, system_ext, product, vendor, odm, vendor_dlkm y system_dlkm.
@@ -80,12 +118,11 @@ No se incluyen instrucciones de flasheo indiscriminado: seguir el
 [checklist físico](docs/PORT_STATUS.md#primera-prueba-física) después de obtener una imagen verificada.
 No asumir que `fastboot boot` es compatible con esta recovery dedicada sin kernel.
 
+## Créditos
 
-### Crypto runtime follow-up (2026-09-21)
+- [OrangeFox Recovery Project](https://gitlab.com/OrangeFox): recovery y herramientas de sincronización.
+- [TeamWin](https://github.com/TeamWin): base TWRP y soporte de recuperación.
+- [LineageOS / Qualcomm BootControl](bootctrl/README.md): procedencia y revisión del adaptador HIDL.
 
-ADB tests recovered the metadata key and mounted its userdata mapping read-only
-after fixing Binder NDK compatibility, VINTF schema/ownership and firmware
-version properties. The tree now contains these fixes and a Qualcomm HIDL
-BootControl adapter for the subsequent mount wait. Full build and PIN-based
-CE decryption on the resulting image remain to be validated; see
-[physical diagnosis](docs/FIRST_BOOT_DIAGNOSIS.md).
+Las revisiones fijadas, licencias originales y detalles de los parches se conservan
+junto al código y en la [documentación del port](docs/PORT_STATUS.md).
