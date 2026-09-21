@@ -16,3 +16,8 @@ Gatekeeper interface module instead of scanning both the template and its copy.
 GatekeeperAidl.cpp owns the Binder and logging dependencies. Its public header
 contains only the verification declaration and standard types, keeping syslog
 macros out of Decrypt.cpp and its libchrome logging headers.
+
+The generated Gatekeeper client is a whole_static_lib of libvold. Its object code
+must be merged into libvold.a, because OrangeFox Make modules (including libtar
+and recovery) do not inherit a Soong static archive's shared_libs dependencies.
+Binder NDK and KeyMint dependencies remain the existing platform dependencies.

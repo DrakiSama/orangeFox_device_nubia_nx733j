@@ -2,6 +2,7 @@
 """Compile the real AIDL verify helper with fake HAL/authz endpoints."""
 from pathlib import Path
 import subprocess
+import re
 import sys
 import tempfile
 vold = Path(sys.argv[1])
@@ -12,7 +13,12 @@ assert not (vold/'nx733j/gatekeeper/Android.bp.in').exists()
 s = (vold/'nx733j/GatekeeperAidl.cpp').read_text()
 header = (vold/'nx733j/GatekeeperAidl.h').read_text()
 assert '#include <aidl/' not in header and '#include <log/' not in header
-assert '"nx733j/GatekeeperAidl.cpp"' in (vold/'Android.bp').read_text()
+build = (vold/'Android.bp').read_text().split('name: "libvold",', 1)[1].split('cc_binary {', 1)[0]
+assert '"nx733j/GatekeeperAidl.cpp"' in build
+whole = re.search(r'whole_static_libs:\s*\[(.*?)\]', build, re.S).group(1)
+shared = re.search(r'shared_libs:\s*\[(.*?)\]', build, re.S).group(1)
+assert '"android.hardware.gatekeeper-V1-ndk_platform"' in whole
+assert '"android.hardware.gatekeeper-V1-ndk_platform"' not in shared
 helper = s.split('// BEGIN NX733J AIDL verification')[1].split('// END NX733J AIDL verification')[0]
 decrypt = (vold/'Decrypt.cpp').read_text()
 assert 'AServiceManager_isDeclared("android.hardware.gatekeeper.IGatekeeper/default")' in decrypt
