@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as temp:
     root = temp/'root'
     source = tree/'recovery/root'
     for name in ['init.recovery.qcom.rc', 'init.recovery.usb.rc',
-                 'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin',
+                 'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin', 'vendor/etc/init/nx733j.bootctrl.rc',
                  'system/etc/vintf/manifest.xml', 'vendor/etc/vintf/manifest.xml']:
         path = root/name
         path.parent.mkdir(parents=True, exist_ok=True)

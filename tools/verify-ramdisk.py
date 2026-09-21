@@ -38,6 +38,7 @@ def resolve(name):
 for name in ['sbin/init_nx733j_hardware.sh', 'sbin/init_nx733j_cpu.sh',
              'sbin/nx733j-diagnose.sh', 'sbin/mount_vendor_dlkm.sh', 'sbin/nx733j-keymint.sh',
              'system/lib64/hw/android.hardware.boot@1.0-impl-1.2-qti.so',
+             'vendor/etc/init/nx733j.bootctrl.rc',
              'init.recovery.qcom.rc', 'init.recovery.usb.rc', 'system/etc/recovery.fstab',
              'system/etc/twrp.flags', 'vendor/firmware/haptic_ram.bin',
              'system/etc/vintf/manifest.xml', 'vendor/etc/vintf/manifest.xml']:
@@ -70,3 +71,8 @@ for part in ['system', 'system_ext', 'product', 'vendor', 'odm', 'vendor_dlkm', 
     assert re.search(r'^' + part + r'\s+\S+\s+erofs\s', fstab, re.M), part
 # Modules are loaded from stock vendor_dlkm; their presence needs device validation.
 print('Ramdisk: scripts, shells/symlinks, fstab, VINTF and haptic firmware verified')
+
+boot_rc = resolve('vendor/etc/init/nx733j.bootctrl.rc').read_text()
+assert 'service boot-hal-1-2 /system/bin/android.hardware.boot@1.2-service' in boot_rc
+assert '    override' in boot_rc
+assert 'setenv LD_PRELOAD /vendor/lib64/libcxx.so:/vendor/lib64/libbase-sdk35.so' in boot_rc

@@ -1,0 +1,13 @@
+# Override the Android 12.1 service after /system/etc/init is parsed.
+# Preload is process-local: the Qualcomm backend requires the shipped SDK-35 ABI.
+service boot-hal-1-2 /system/bin/android.hardware.boot@1.2-service
+    override
+    interface android.hardware.boot@1.0::IBootControl default
+    interface android.hardware.boot@1.1::IBootControl default
+    interface android.hardware.boot@1.2::IBootControl default
+    user root
+    group root
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib:/sbin
+    setenv LD_PRELOAD /vendor/lib64/libcxx.so:/vendor/lib64/libbase-sdk35.so
+    disabled
+    seclabel u:r:recovery:s0

@@ -104,3 +104,28 @@ The HIDL adapter still requires the full Actions build and physical validation.
 Metadata-key recovery is confirmed; PIN-protected CE decryption is not yet
 confirmed. ssgtzd/libssl and AIDL health compatibility remain separate issues.
 Raw logs and device identifiers remain local and are not committed.
+
+
+## Follow-up: compiled 6a3b8e3, splash wait and FBE provisioning
+
+The Actions image built successfully, but physical startup stopped at the splash.
+KeyMint and Keystore2 were running and the installed OS/patch properties were
+correct, confirming the preceding startup fixes in the compiled image.
+
+The HIDL adapter was present, but boot-hal-1-2 loaded SDK-32 libc++/libbase before
+opening the Qualcomm backend. Missing symbols were __libcpp_verbose_abort and
+android::base::HexString. Starting that service with process-local LD_PRELOAD of
+/vendor/lib64/libcxx.so and /vendor/lib64/libbase-sdk35.so registered BootControl.
+Recovery then reported successful metadata decryption, mounted /data and reached
+the file manager. The permanent vendor init override retains the original HIDL
+interfaces and limits preloading to this service.
+
+FBE subsequently failed after the kernel successfully installed the first key:
+"Unable to find device keyring: Required key not available". The absent fscrypt
+session keyring prevents adding the fscrypt-provisioning key. The fallback then
+tries incompatible wrapping and reports EINVAL; that is a secondary failure.
+The reviewed KeyUtil.cpp patch creates an empty fscrypt session keyring only on
+ENOKEY, reuses an existing one, and preserves permission/creation failures.
+It does not erase or replace stored key blobs or alter encryption flags.
+Actual FBE/CE decryption with this patch still requires the next compiled image.
+A compiled helper test covers existing, missing, reuse and error cases in CI.

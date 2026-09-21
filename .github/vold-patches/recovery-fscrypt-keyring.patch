@@ -1,0 +1,22 @@
+--- a/KeyUtil.cpp
++++ b/KeyUtil.cpp
+@@ -20,6 +20,7 @@
+ #include <sstream>
+ #include <string>
+ 
++#include <errno.h>
+ #include <fcntl.h>
+ #include <linux/fscrypt.h>
+ #include <openssl/sha.h>
+@@ -148,6 +149,11 @@
+ // old to support FS_IOC_ADD_ENCRYPTION_KEY and FS_IOC_REMOVE_ENCRYPTION_KEY.
+ static bool fscryptKeyring(key_serial_t* device_keyring) {
+     *device_keyring = keyctl_search(KEY_SPEC_SESSION_KEYRING, "keyring", "fscrypt", 0);
++    // Recovery has no vold daemon to create the provisioning session keyring.
++    // Missing keyrings are initialized; permission and other errors still fail.
++    if (*device_keyring == -1 && errno == ENOKEY) {
++        *device_keyring = add_key("keyring", "fscrypt", nullptr, 0, KEY_SPEC_SESSION_KEYRING);
++    }
+     if (*device_keyring == -1) {
+         PLOG(ERROR) << "Unable to find device keyring";
+         return false;

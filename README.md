@@ -29,7 +29,7 @@ pruebas automáticas se distinguen de la validación de una imagen instalada.
 | KeyMint y Keystore2 | Arranque, registro de servicios y negociación de secretos comprobados con correcciones en RAM. |
 | Cifrado de metadatos | Clave recuperada y volumen descifrado montado en solo lectura durante el diagnóstico. |
 | Datos protegidos con PIN (FBE/CE) | Pendiente de validación en la nueva imagen. |
-| BootControl Qualcomm | Adaptador HIDL integrado en `6a3b8e3`; pendiente de compilación y prueba física. |
+| BootControl Qualcomm | Adaptador compilado; ajuste de bibliotecas comprobado en RAM: desbloquea el montaje de `/data` y permite llegar al menú. |
 | Batería, temperatura y vibración | Soporte ADSP, detección tardía de CPU y haptics Awinic integrados; validación completa pendiente. |
 | Flasheo de imágenes lógicas | Experimental; limitado a asignaciones existentes, sin OTA ni snapshots activos. |
 | WiFi, OTG, MTP, fastbootd y backup/restauración | No se anuncian como validados en esta revisión de OrangeFox. |
@@ -47,8 +47,11 @@ incorpora las correcciones identificadas por ADB:
 
 Las **nueve suites de regresión** de esa revisión
 [pasaron en Actions](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561296423).
-La [compilación de la nueva imagen](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561318301)
-estaba en curso al actualizar esta página; el enlace muestra su estado actual.
+La [compilación `6a3b8e3`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561318301)
+terminó correctamente. La prueba física encontró un bloqueo de BootControl por
+bibliotecas incompatibles; su corrección se comprobó en RAM y está integrada en `main`.
+También se corrigió la inicialización del keyring de sesión `fscrypt`: la
+validación de FBE con este último cambio requiere una nueva imagen.
 El [build anterior que llega al menú](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35552798531)
 corresponde a `72b1525` y todavía presenta los fallos de descifrado diagnosticados.
 
