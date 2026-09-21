@@ -180,6 +180,18 @@ siendo rechazado, y ejecuta la receta Make para comprobar que las propiedades 35
 recovery sin falsear ro.vendor.build.version.sdk. El verificador final sigue exigiendo ambos
 valores 35 en el ramdisk extraído de la imagen. No se genera ni publica una imagen vendor.
 
+## Compilación completa y ruta del desempaquetador
+
+Actions `35542984116` completó `m recoveryimage` y el validador del ramdisk preparado.
+El fallo posterior fue del script de verificación: la ruta correcta para esta base es
+`system/tools/mkbootimg/unpack_bootimg.py`, no `tools/mkbootimg/unpack_bootimg.py`.
+Se corrigió y se añadió una prueba que genera un boot image de cabecera v4 con mkbootimg
+real y verifica su extracción con unpack_bootimg real, ambos de la revisión Android 12.1
+`b7c1a63df33e6763d2482bc9d33007f67706d131`. El build también ejecuta esa prueba antes de
+compilar para detectar fallos de herramientas sin esperar al empaquetado final.
+Todavía no se declara la imagen lista ni validada en hardware; la siguiente ejecución
+comprobará el ramdisk extraído y sólo después publicará IMG y SHA256SUMS.
+
 ## Límites y riesgos conocidos
 
 - FBE con PIN, batería y haptics tienen evidencia del TWRP de referencia, no de este nuevo OrangeFox.

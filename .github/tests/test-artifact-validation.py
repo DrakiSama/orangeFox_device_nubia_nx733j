@@ -56,15 +56,23 @@ with tempfile.TemporaryDirectory() as temp:
     add('TRAILER!!!', b'', 0)
     image = temp/'synthetic.img'
     image.write_bytes(gzip.compress(payload))
-    # Stub only the upstream boot header decoder; exercise our actual CPIO/extraction checker.
-    unpack = temp/'build/tools/mkbootimg/unpack_bootimg.py'
-    unpack.parent.mkdir(parents=True)
-    unpack.write_text('import sys, pathlib, shutil\n'
-                      'out=pathlib.Path(sys.argv[sys.argv.index("--out")+1]); out.mkdir()\n'
-                      'shutil.copyfile(sys.argv[sys.argv.index("--boot_img")+1],out/"ramdisk")\n')
-    run('verify-image.py', temp/'build', image)
+    build = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else temp/'build'
+    if len(sys.argv) > 2:
+        ramdisk = temp/'ramdisk.gz'
+        ramdisk.write_bytes(image.read_bytes())
+        subprocess.run([sys.executable, str(build/'system/tools/mkbootimg/mkbootimg.py'),
+                        '--header_version', '4', '--ramdisk', str(ramdisk),
+                        '--output', str(image)], check=True)
+    else:
+        # Isolated extractor tests; CI additionally exercises the real Android tools.
+        unpack = build/'system/tools/mkbootimg/unpack_bootimg.py'
+        unpack.parent.mkdir(parents=True)
+        unpack.write_text('import sys, pathlib, shutil\n'
+                          'out=pathlib.Path(sys.argv[sys.argv.index("--out")+1]); out.mkdir()\n'
+                          'shutil.copyfile(sys.argv[sys.argv.index("--boot_img")+1],out/"ramdisk")\n')
+    run('verify-image.py', build, image)
     image.write_bytes(b'not cpio')
-    run('verify-image.py', temp/'build', image, success=False)
+    run('verify-image.py', build, image, success=False)
     with image.open('wb') as stream: stream.truncate(104857601)
-    run('verify-image.py', temp/'build', image, success=False)
+    run('verify-image.py', build, image, success=False)
 print('Artifacts: valid root, absolute shell symlink, missing shell, CPIO extraction, invalid archive and oversize rejection passed')

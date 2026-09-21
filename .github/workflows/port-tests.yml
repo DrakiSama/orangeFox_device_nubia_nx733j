@@ -31,3 +31,14 @@ jobs:
           git -C "$RUNNER_TEMP/fox-build-make" fetch --depth=1 origin "$(cat .github/build-revision)"
           git -C "$RUNNER_TEMP/fox-build-make" checkout --detach FETCH_HEAD
           python3 tools/apply-build-patches.py "$RUNNER_TEMP/fox-build-make"
+      - name: Verify real Android 12.1 boot-image tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools_root="$RUNNER_TEMP/fox-image-tools"
+          tools_dir="$tools_root/system/tools/mkbootimg"
+          git init "$tools_dir"
+          git -C "$tools_dir" remote add origin https://android.googlesource.com/platform/system/tools/mkbootimg
+          git -C "$tools_dir" fetch --depth=1 origin "$(cat .github/mkbootimg-revision)"
+          git -C "$tools_dir" checkout --detach FETCH_HEAD
+          python3 .github/tests/test-artifact-validation.py "$GITHUB_WORKSPACE" "$tools_root"

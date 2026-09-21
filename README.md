@@ -7,7 +7,7 @@ Producto: `ofrp_NX733J`. Rama publicada: `main`.
 
 - 🟡 Particiones EROFS, FBE v2, batería/ADSP, haptics Awinic, CPU tardía y diagnóstico integrados.
 - ✅ Pruebas de código y runtime simulado: consultar [resultados](docs/validation-results.txt).
-- 🟡 Corregido el contrato de API del producto recovery para fox_12.1; pendiente de validación del nuevo build en Actions. No hay imagen final validada.
+- 🟡 Compilación completa y staging del ramdisk aprobados en Actions `35542984116`. Corregida la ruta del desempaquetador; falta completar la validación de la imagen final.
 - 🟡 Validación física de este port: pendiente en NX733J.
 - ⚠️ Flasheo IMG lógico: experimental, limitado a asignaciones existentes y sin OTA/snapshots activos.
 - ❌ WiFi no validado. No se anuncia compatibilidad de OTG hasta descartar identificación errónea de UFS.

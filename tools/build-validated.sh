@@ -15,6 +15,7 @@ device=$root/device/nubia/NX733J
 python3 "$device/tools/apply-build-patches.py" "$root/build/make" | tee "$artifacts/build-compat.log"
 python3 "$device/tools/apply-recovery-patches.py" "$root/bootable/recovery"
 python3 "$device/tools/validate-port.py" "$root/bootable/recovery" | tee "$artifacts/tests.log"
+python3 "$device/.github/tests/test-artifact-validation.py" "$device" "$root" | tee "$artifacts/boot-image-tools-test.log"
 repo manifest -r -o "$artifacts/manifest.xml"
 {
     printf 'device_tree=%s\n' "$revision"

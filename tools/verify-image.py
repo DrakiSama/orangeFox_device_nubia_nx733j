@@ -10,7 +10,7 @@ build, image = map(lambda s: Path(s).resolve(), sys.argv[1:3])
 assert 0 < image.stat().st_size <= 104857600
 with tempfile.TemporaryDirectory(prefix='fox-final-image-') as tmp:
     tmp = Path(tmp)
-    subprocess.run([sys.executable, str(build/'tools/mkbootimg/unpack_bootimg.py'),
+    subprocess.run([sys.executable, str(build/'system/tools/mkbootimg/unpack_bootimg.py'),
                     '--boot_img', str(image), '--out', str(tmp/'unpacked')], check=True)
     ramdisk = tmp/'unpacked/ramdisk'
     assert ramdisk.is_file() and ramdisk.stat().st_size > 0, 'Missing final ramdisk'
