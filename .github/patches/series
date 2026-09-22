@@ -7,3 +7,4 @@ late-cpu-sensor.patch
 cli-result.patch
 nx733j-super-protection.patch
 nx733j-bootctrl-runtime.patch
+nx733j-keymint-linkage.patch

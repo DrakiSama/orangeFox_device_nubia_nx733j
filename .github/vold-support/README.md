@@ -21,3 +21,9 @@ The generated Gatekeeper client is a whole_static_lib of libvold. Its object cod
 must be merged into libvold.a, because OrangeFox Make modules (including libtar
 and recovery) do not inherit a Soong static archive's shared_libs dependencies.
 Binder NDK and KeyMint dependencies remain the existing platform dependencies.
+
+GatekeeperVerifyResponse serializes KeyMint HardwareAuthToken, which itself uses
+SecureClock Timestamp. The recovery and libtar Make modules explicitly link both
+platform NDK libraries through nx733j-keymint-linkage.patch. Static embedding of
+Gatekeeper alone does not carry these shared dependencies across the Soong/Make
+boundary. The integration regression scans every Make consumer of libvold.

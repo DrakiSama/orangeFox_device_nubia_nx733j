@@ -9,6 +9,7 @@ source = Path(sys.argv[1]).resolve()
 tests = tree / '.github/tests'
 jobs = [
     ('test-cli-result.py', source),
+    ('test-keymint-linkage.py', source),
     ('test-cpu-discovery.py', tree / 'recovery/root/vendor/bin/init_nx733j_cpu.sh'),
     ('test-late-cpu-sensor.py', source / 'data.cpp'),
     ('test-image-preflight.py', source / 'partition.cpp'),
@@ -26,4 +27,4 @@ for name, arg in jobs:
         failed.append(name)
 if failed:
     sys.exit('FAILED: ' + ', '.join(failed))
-print('\nAll ten test suites passed. Hardware and full Android build are separate validations.')
+print('\nAll eleven test suites passed. Hardware and full Android build are separate validations.')

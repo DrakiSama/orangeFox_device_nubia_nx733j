@@ -1,0 +1,22 @@
+--- a/Android.mk
++++ b/Android.mk
+@@ -345,6 +345,8 @@
+         android.hardware.oemlock@1.0 libf2fs_sparseblock libbinder libbinder_ndk \
+         libandroidicu.recovery \
+         android.hardware.gatekeeper@1.0 \
++        android.hardware.security.keymint-V1-ndk_platform \
++        android.hardware.security.secureclock-V1-ndk_platform \
+         android.hardware.weaver@1.0 \
+         android.frameworks.stats@1.0 \
+         android.security.maintenance-ndk_platform \
+--- a/libtar/Android.mk
++++ b/libtar/Android.mk
+@@ -19,6 +19,8 @@
+         android.hardware.boot@1.0 \
+         android.hardware.confirmationui@1.0 \
+         android.hardware.gatekeeper@1.0 \
++        android.hardware.security.keymint-V1-ndk_platform \
++        android.hardware.security.secureclock-V1-ndk_platform \
+         android.hardware.keymaster@3.0 \
+         android.hardware.keymaster@4.0 \
+         android.hardware.keymaster@4.1 \
