@@ -10,8 +10,8 @@ Port de OrangeFox para el Nubia Z70 Ultra, basado en el device tree TWRP
 Mantenido por [DrakiSama](https://github.com/DrakiSama).
 
 **En desarrollo:** OrangeFox ya inicia y permite acceder a la interfaz.
-El descifrado de metadatos funcionó en pruebas por ADB; el desbloqueo completo
-con PIN todavía no está confirmado en una imagen nueva.
+El descifrado de metadatos y el desbloqueo con PIN del usuario principal ya se
+comprobaron en el teléfono. El perfil secundario 999 todavía falla al descifrarse.
 
 [Compilaciones y artifacts](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/build.yml)
 · [Diagnóstico en el dispositivo](docs/FIRST_BOOT_DIAGNOSIS.md)
@@ -19,52 +19,41 @@ con PIN todavía no está confirmado en una imagen nueva.
 
 ## Estado del dispositivo
 
-Estado documentado al **21 de septiembre de 2026**. Las pruebas en RAM y las
+Estado documentado al **22 de septiembre de 2026**. Las pruebas en RAM y las
 pruebas automáticas se distinguen de la validación de una imagen instalada.
 
 | Componente | Estado comprobado |
 | --- | --- |
-| Arranque e interfaz | El build `72b1525` inicia OrangeFox y llega al menú. |
+| Arranque e interfaz | La imagen probada el 22/09 inicia OrangeFox y llega al almacenamiento principal. |
 | ADB por USB | Confirmado; utilizado para el diagnóstico físico. |
-| KeyMint y Keystore2 | Arranque, registro de servicios y negociación de secretos comprobados con correcciones en RAM. |
-| Cifrado de metadatos | Clave recuperada y volumen descifrado montado en solo lectura durante el diagnóstico. |
-| Datos protegidos con PIN (FBE/CE) | Pendiente de validación en la nueva imagen. |
-| BootControl Qualcomm | Adaptador compilado; ajuste de bibliotecas comprobado en RAM: desbloquea el montaje de `/data` y permite llegar al menú. |
+| KeyMint y Keystore2 | Servicios activos y desbloqueo del usuario principal comprobados en el teléfono. |
+| Cifrado de metadatos | Volumen descifrado en `/dev/block/dm-14` en la imagen instalada. |
+| Datos protegidos con PIN (FBE/CE) | Usuario 0 desbloqueado; `/data/media/0/Android` accesible. Perfil 999 pendiente. |
+| BootControl Qualcomm | Servicio HIDL activo en la imagen instalada; arranque sin intervención en RAM en esta sesión. |
 | Batería, temperatura y vibración | Soporte ADSP, detección tardía de CPU y haptics Awinic integrados; validación completa pendiente. |
 | Flasheo de imágenes lógicas | Experimental; limitado a asignaciones existentes, sin OTA ni snapshots activos. |
 | WiFi, OTG, MTP, fastbootd y backup/restauración | No se anuncian como validados en esta revisión de OrangeFox. |
 
 ## Últimos avances
 
-La revisión [`6a3b8e3`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/commit/6a3b8e3)
-incorpora las correcciones identificadas por ADB:
+La [compilación de `14f796a`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35675669026)
+y sus [pruebas de regresión](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35675668552)
+terminaron correctamente. Esta revisión completa las dependencias de KeyMint y
+SecureClock para el cliente Gatekeeper AIDL.
 
-- Compatibilidad Binder NDK para los servicios de cifrado.
-- Manifiestos VINTF compatibles con la base Android 12.1 y declaraciones en su ubicación correcta.
-- Lectura de la versión y los parches del firmware instalado antes de iniciar KeyMint,
-  mediante montajes EROFS de solo lectura y usando el slot activo.
-- Adaptador HIDL BootControl sobre la biblioteca Qualcomm del dispositivo.
+El 22/09 se revisó por ADB el teléfono conectado con la última imagen indicada
+por el usuario. El registro confirmó `User 0 Decrypted Successfully`, la propiedad
+`twrp.user.0.decrypt=1` y el acceso al directorio `/data/media/0/Android`.
+No se modificaron servicios ni claves en RAM durante esta comprobación.
 
-Las **nueve suites de regresión** de esa revisión
-[pasaron en Actions](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561296423).
-La [compilación `6a3b8e3`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35561318301)
-terminó correctamente. La prueba física encontró un bloqueo de BootControl por
-bibliotecas incompatibles; su corrección se comprobó en RAM y está integrada en `main`.
-También se corrigió la inicialización del keyring de sesión `fscrypt`: la
-validación de FBE con este último cambio requiere una nueva imagen.
-El [build anterior que llega al menú](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35552798531)
-corresponde a `72b1525` y todavía presenta los fallos de descifrado diagnosticados.
+El perfil secundario **999** sigue sin descifrarse: falla la operación para
+abrir su blob de contraseña sintética y `twrp.user.999.decrypt=0`.
+El éxito del usuario principal no implica soporte completo para otros perfiles,
+backup/restauración ni otras versiones de firmware.
 
-### Seguimiento de la prueba con `753b2b9`
-
-La creación del keyring ya se comprobó en el teléfono: cargan las claves DE y
-aparece la pantalla del PIN al desbloquear BootControl. El bloqueo del logo se
-debía a que init rechazaba el reemplazo del servicio desde vendor; ahora se
-parchea su definición original en system.
-
-Los intentos de PIN detectaron otra incompatibilidad: el cliente esperaba
-Gatekeeper HIDL y el dispositivo ofrece AIDL. Se agregó esa ruta de verificación;
-el desbloqueo CE sigue pendiente de prueba con la nueva imagen.
+Cambios integrados: compatibilidad Binder/VINTF, propiedades del firmware para
+KeyMint, BootControl Qualcomm con bibliotecas compatibles, keyring `fscrypt`
+y verificación Gatekeeper AIDL con entrega del token a Keystore2.
 
 ## Generar con GitHub Actions
 
