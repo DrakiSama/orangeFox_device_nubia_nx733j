@@ -153,3 +153,16 @@ It does not enroll/delete users, modify credentials or log supplied credentials.
 Rejection, retry timeout, missing services, malformed token and authorization
 failure stop the attempt. Successful PIN/CE unlock remains unconfirmed until
 this newly compiled client is tested physically.
+
+
+## Battery percentage missing (2026-09-22)
+
+On the installed image, sysfs reported capacity 52 and status Charging, while
+`tw_battery` and `tw_battery_charge` were empty. Recovery logcat repeatedly waited
+for the absent `android.hardware.health@2.0::IHealth/default` service.
+The pinned Recovery Android.mk evaluates the legacy-battery CFLAG before its
+custom battery path block sets the legacy variable, so the path alone is insufficient.
+BoardConfig now explicitly enables `TW_USE_LEGACY_BATTERY_SERVICES` before that
+conditional is evaluated. The existing monitor reads capacity/status every second,
+including retrying when ADSP exposes sysfs after startup. This change requires a
+new image; the percentage display has not yet been verified on that image.

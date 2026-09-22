@@ -195,6 +195,9 @@ TW_LOAD_PREBUILT_MODULES_AT_FIRST := true
 TW_CUSTOM_CPU_TEMP_PATH := "/tmp/nx733j-cpu-temp"
 TW_BACKUP_EXCLUSIONS := /data/fonts
 TW_HAS_USB_OTG := true
+# Read ADSP-backed sysfs directly: this device has no Health HIDL 2.0 service.
+# Set this before Recovery/Android.mk evaluates its compile-time condition.
+TW_USE_LEGACY_BATTERY_SERVICES := true
 TW_CUSTOM_BATTERY_PATH := "/sys/class/power_supply/battery"
 TW_DEVICE_VERSION := by Draki local
 -include $(DEVICE_PATH)/build-version.mk

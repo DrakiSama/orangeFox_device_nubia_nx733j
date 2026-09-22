@@ -13,6 +13,9 @@ assert re.search(r'BOARD_RECOVERYIMAGE_PARTITION_SIZE\s*:=\s*104857600\b', board
 assert re.search(r'BOARD_SUPER_PARTITION_SIZE\s*:=\s*17179869184\b', board)
 assert 'TW_CUSTOM_CPU_TEMP_PATH := "/tmp/nx733j-cpu-temp"' in board
 assert 'TW_NO_HAPTICS := false' in board
+# A custom path alone enables legacy mode too late in the pinned Recovery makefile.
+assert 'TW_USE_LEGACY_BATTERY_SERVICES := true' in board
+assert 'TW_CUSTOM_BATTERY_PATH := "/sys/class/power_supply/battery"' in board
 for flag in ['TW_INCLUDE_CRYPTO', 'TW_INCLUDE_CRYPTO_FBE', 'TW_INCLUDE_FBE_METADATA_DECRYPT']:
     assert flag + ' := true' in board
 assert 'OF_SUPPORT_ALL_BLOCK_OTA_UPDATES := 1' not in board
