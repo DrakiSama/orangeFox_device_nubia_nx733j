@@ -3,6 +3,12 @@
 Este port conserva OrangeFox `fox_12.1`, el producto `ofrp_NX733J` y su interfaz.
 La evidencia de hardware de TWRP no equivale a una prueba física de este OrangeFox.
 
+## Estado actual
+
+Primera versión funcional comprobada el 23/09/2026: imagen `e7ec3e0`.
+Ver [resultados y limitaciones actuales](FIRST_VERSION_REVIEW.md).
+Las secciones de diagnóstico siguientes conservan el historial de desarrollo.
+
 ## Revisiones revisadas
 
 | Componente | Revisión |
@@ -103,8 +109,8 @@ Valida el máximo de 100 MiB, el staging y el ramdisk extraído de la imagen fin
 intérpretes mediante resolución de symlinks dentro del ramdisk. Genera SHA256SUMS solamente
 si existe una imagen que supera esas comprobaciones.
 
-Consultar `validation-results.txt` para el estado real del intento local de build. Hasta que exista
-una imagen validada, su tamaño y SHA-256 se consideran **no disponibles**.
+`validation-results.txt` conserva intentos históricos. La imagen de referencia actual
+y su SHA256SUMS están en los artefactos del build enlazado en el informe actual.
 
 ## Corrección del contrato de API de recovery
 

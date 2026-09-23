@@ -9,9 +9,11 @@ Port de OrangeFox para el Nubia Z70 Ultra, basado en el device tree TWRP
 `twrp-16.0`, con parches específicos del dispositivo y compilación en GitHub Actions.
 Mantenido por [DrakiSama](https://github.com/DrakiSama).
 
-**En desarrollo:** OrangeFox ya inicia y permite acceder a la interfaz.
-El descifrado de metadatos y el desbloqueo con PIN del usuario principal ya se
-comprobaron en el teléfono. El perfil secundario 999 todavía falla al descifrarse.
+**Primera versión funcional (no oficial):** arranque, interfaz, desbloqueo con PIN
+del usuario principal y porcentaje de batería comprobados en el teléfono.
+Imagen de referencia: [`e7ec3e0`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35683505355).
+El perfil 999 de aplicaciones clonadas sigue sin descifrarse; no impide acceder
+al almacenamiento del usuario principal, pero sus datos no se consideran recuperables.
 
 [Compilaciones y artifacts](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/workflows/build.yml)
 · [Diagnóstico en el dispositivo](docs/FIRST_BOOT_DIAGNOSIS.md)
@@ -19,41 +21,41 @@ comprobaron en el teléfono. El perfil secundario 999 todavía falla al descifra
 
 ## Estado del dispositivo
 
-Estado documentado al **22 de septiembre de 2026**. Las pruebas en RAM y las
+Estado documentado al **23 de septiembre de 2026**. Las pruebas en RAM y las
 pruebas automáticas se distinguen de la validación de una imagen instalada.
 
 | Componente | Estado comprobado |
 | --- | --- |
-| Arranque e interfaz | La imagen probada el 22/09 inicia OrangeFox y llega al almacenamiento principal. |
+| Arranque e interfaz | La imagen probada el 23/09 inicia OrangeFox y llega al almacenamiento principal. |
 | ADB por USB | Confirmado; utilizado para el diagnóstico físico. |
 | KeyMint y Keystore2 | Servicios activos y desbloqueo del usuario principal comprobados en el teléfono. |
 | Cifrado de metadatos | Volumen descifrado en `/dev/block/dm-14` en la imagen instalada. |
 | Datos protegidos con PIN (FBE/CE) | Usuario 0 desbloqueado; `/data/media/0/Android` accesible. Perfil 999 pendiente. |
 | BootControl Qualcomm | Servicio HIDL activo en la imagen instalada; arranque sin intervención en RAM en esta sesión. |
-| Batería, temperatura y vibración | Soporte ADSP, detección tardía de CPU y haptics Awinic integrados; validación completa pendiente. |
+| Batería y temperatura | Capacidad sysfs e interfaz coinciden (34 %), carga detectada y temperatura CPU disponible. |
+| Vibración | Soporte Awinic integrado; comprobación física pendiente. |
 | Flasheo de imágenes lógicas | Experimental; limitado a asignaciones existentes, sin OTA ni snapshots activos. |
 | WiFi, OTG, MTP, fastbootd y backup/restauración | No se anuncian como validados en esta revisión de OrangeFox. |
 
-## Últimos avances
+## Primera versión funcional
 
-La [compilación de `14f796a`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35675669026)
-y sus [pruebas de regresión](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35675668552)
-terminaron correctamente. Esta revisión completa las dependencias de KeyMint y
-SecureClock para el cliente Gatekeeper AIDL.
+La [compilación de `e7ec3e0`](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35683505355)
+y sus [pruebas de regresión](https://github.com/DrakiSama/orangeFox_device_nubia_nx733j/actions/runs/35683505411)
+terminaron correctamente, incluida la inspección del ramdisk final.
+La revisión por ADB del 23/09 confirmó el usuario 0 desbloqueado,
+almacenamiento interno accesible, batería/carga y lectura de temperatura.
+Las siete particiones lógicas se montaron temporalmente en solo lectura.
 
-El 22/09 se revisó por ADB el teléfono conectado con la última imagen indicada
-por el usuario. El registro confirmó `User 0 Decrypted Successfully`, la propiedad
-`twrp.user.0.decrypt=1` y el acceso al directorio `/data/media/0/Android`.
-No se modificaron servicios ni claves en RAM durante esta comprobación.
+El usuario identifica el perfil **999** como el de aplicaciones dobles
+(WhatsApp, Messenger, etc.). Su descifrado queda fuera del soporte comprobado
+de esta primera versión; no se oculta el fallo ni se elimina ese perfil.
 
-El perfil secundario **999** sigue sin descifrarse: falla la operación para
-abrir su blob de contraseña sintética y `twrp.user.999.decrypt=0`.
-El éxito del usuario principal no implica soporte completo para otros perfiles,
-backup/restauración ni otras versiones de firmware.
-
-Cambios integrados: compatibilidad Binder/VINTF, propiedades del firmware para
-KeyMint, BootControl Qualcomm con bibliotecas compatibles, keyring `fscrypt`
-y verificación Gatekeeper AIDL con entrega del token a Keystore2.
+Pendientes de la revisión: `ssgtzd` no inicia por una dependencia `libssl.so`
+ausente; Keystore2 tuvo un fallo inicial antes de reiniciarse y permitir el
+descifrado; el registro muestra avisos de montaje del sistema desde la interfaz,
+aunque los montajes manuales de solo lectura funcionaron. Backup/restauración,
+flasheo, OTA, MTP con transferencia, OTG y fastbootd requieren pruebas propias.
+Consulta el [informe de validación](docs/FIRST_VERSION_REVIEW.md).
 
 ## Generar con GitHub Actions
 
